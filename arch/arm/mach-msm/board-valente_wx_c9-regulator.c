@@ -16,7 +16,7 @@
 #include <linux/regulator/gpio-regulator.h>
 #include <mach/rpm-regulator.h>
 
-#include "board-valente_wx.h"
+#include "board-valente_wx_c9.h"
 
 #define VREG_CONSUMERS(_id) \
 	static struct regulator_consumer_supply vreg_consumers_##_id[]
@@ -67,7 +67,6 @@ VREG_CONSUMERS(L9) = {
 VREG_CONSUMERS(L10) = {
 	REGULATOR_SUPPLY("8921_l10",		NULL),
 	REGULATOR_SUPPLY("iris_vddpa",		"wcnss_wlan.0"),
-	REGULATOR_SUPPLY("8921_l10",		"cable_detect.0"),
 
 };
 VREG_CONSUMERS(L11) = {
@@ -147,7 +146,6 @@ VREG_CONSUMERS(S1) = {
 VREG_CONSUMERS(S2) = {
 	REGULATOR_SUPPLY("8921_s2",		NULL),
 	REGULATOR_SUPPLY("iris_vddrfa",		"wcnss_wlan.0"),
-	REGULATOR_SUPPLY("8921_s2",			"cable_detect.0"),
 
 };
 VREG_CONSUMERS(S3) = {

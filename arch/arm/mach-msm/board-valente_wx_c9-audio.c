@@ -1,6 +1,6 @@
 /* Copyright (c) 2011-2012, Code Aurora Forum. All rights reserved.
  *
- * HTC: valente_wx machine driver which defines board-specific data
+ * HTC: valente_wx_c9 machine driver which defines board-specific data
  * Copy from sound/soc/msm/msm8960.c
  *
  * This program is free software; you can redistribute it and/or modify
@@ -29,7 +29,7 @@
 #include <mach/htc_acoustic_8960.h>
 #include "../../../sound/soc/codecs/wcd9310.h"
 #include "../sound/soc/msm/msm-pcm-routing.h"
-#include "board-valente_wx.h"
+#include "board-valente_wx_c9.h"
 
 static atomic_t q6_effect_mode = ATOMIC_INIT(-1);
 
@@ -461,9 +461,8 @@ static int msm8960_btsco_rate_put(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
-static int spk_get_ctl(
-					struct snd_kcontrol *kcontrol,
-					struct snd_ctl_elem_value *ucontrol) {
+static int spk_get_ctl(struct snd_kcontrol *kcontrol,
+			struct snd_ctl_elem_value *ucontrol) {
 	return 0;
 }
 
@@ -1065,20 +1064,20 @@ struct snd_soc_card snd_soc_card_msm8960 = {
 	.num_links	= ARRAY_SIZE(msm8960_dai),
 };
 
-void valente_wx_set_q6_effect_mode(int mode)
+void valente_wx_c9_set_q6_effect_mode(int mode)
 {
 	pr_aud_info("%s: mode %d\n", __func__, mode);
 	atomic_set(&q6_effect_mode, mode);
 }
 
-int valente_wx_get_q6_effect_mode(void)
+int valente_wx_c9_get_q6_effect_mode(void)
 {
 	int mode = atomic_read(&q6_effect_mode);
 	pr_aud_info("%s: mode %d\n", __func__, mode);
 	return mode;
 }
 
-int valente_wx_get_hw_revision(void)
+int valente_wx_c9_get_hw_revision(void)
 {
 
 	pr_aud_info("%s: audio hw rev is %d\n", __func__, audio_hw_rev);
@@ -1086,16 +1085,16 @@ int valente_wx_get_hw_revision(void)
 }
 
 static struct acoustic_ops acoustic = {
-	.set_q6_effect = valente_wx_set_q6_effect_mode,
-	.get_htc_revision = valente_wx_get_hw_revision,
+	.set_q6_effect = valente_wx_c9_set_q6_effect_mode,
+	.get_htc_revision = valente_wx_c9_get_hw_revision,
 };
 
 static struct q6asm_ops qops = {
-	.get_q6_effect = valente_wx_get_q6_effect_mode,
+	.get_q6_effect = valente_wx_c9_get_q6_effect_mode,
 };
 
 static struct msm_pcm_routing_ops rops = {
-	.get_q6_effect = valente_wx_get_q6_effect_mode,
+	.get_q6_effect = valente_wx_c9_get_q6_effect_mode,
 };
 
 static struct platform_device *msm8960_snd_device;
@@ -1123,7 +1122,7 @@ static ssize_t headset_stat_show(struct kobject *kobj, struct kobj_attribute *at
 }
 #endif
 
-static int __init valente_wx_audio_init(void)
+static int __init valente_wx_c9_audio_init(void)
 {
 	int ret = 0, rc = 0;
 
@@ -1190,14 +1189,14 @@ static int __init valente_wx_audio_init(void)
 	return ret;
 
 }
-late_initcall(valente_wx_audio_init);
+late_initcall(valente_wx_c9_audio_init);
 
-static void __exit valente_wx_audio_exit(void)
+static void __exit valente_wx_c9_audio_exit(void)
 {
 	pr_debug("%s", __func__);
 	platform_device_unregister(msm8960_snd_device);
 }
-module_exit(valente_wx_audio_exit);
+module_exit(valente_wx_c9_audio_exit);
 
 MODULE_DESCRIPTION("ALSA Platform Valente#WX");
 MODULE_LICENSE("GPL v2");

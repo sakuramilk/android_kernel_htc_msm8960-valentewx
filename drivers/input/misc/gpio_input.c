@@ -22,6 +22,7 @@
 #include <linux/slab.h>
 #include <linux/wakelock.h>
 #include <mach/board.h>
+#include <linux/irq.h>
 #include <linux/fs.h>
 #include <asm/uaccess.h>
 
@@ -36,6 +37,7 @@ static int power_key_led_requested;
 static int pre_power_key_status;
 static int pre_power_key_led_status;
 #endif
+static int power_key_intr_flag;
 
 static DEFINE_MUTEX(wakeup_mutex);
 static unsigned char wakeup_bitmask;
@@ -144,7 +146,7 @@ static int set_hw_reason(int reason)
 		return PTR_ERR(filp);
 	}
 
-	filp->f_pos = 584;
+	filp->f_pos = 624;
 	nread = kernel_write(filp, (char *)&hw_reason, sizeof(int), filp->f_pos);
 	pr_info("wrire: %X (%d)\n", hw_reason, nread);
 
@@ -333,6 +335,12 @@ static irqreturn_t gpio_event_input_irq_handler(int irq, void *dev_id)
 
 	key_entry = &ds->info->keymap[keymap_index];
 
+	if (key_entry->code == KEY_POWER && power_key_intr_flag == 0) {
+		irq_set_irq_type(irq, IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING);
+		power_key_intr_flag = 1;
+		KEY_LOGD("%s, keycode = %d, first intr", __func__, key_entry->code);
+	}
+
 	if (ds->info->debounce_time.tv64) {
 		spin_lock_irqsave(&ds->irq_lock, irqflags);
 		if (ks->debounce & DEBOUNCE_WAIT_IRQ) {
@@ -373,6 +381,7 @@ static int gpio_event_input_request_irqs(struct gpio_input_state *ds)
 {
 	int i;
 	int err;
+	int value;
 	unsigned int irq;
 	unsigned long req_flags = IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING;
 
@@ -380,11 +389,21 @@ static int gpio_event_input_request_irqs(struct gpio_input_state *ds)
 		err = irq = gpio_to_irq(ds->info->keymap[i].gpio);
 		if (err < 0)
 			goto err_gpio_get_irq_num_failed;
+
+		if (ds->info->keymap[i].code == KEY_POWER) {
+			power_key_intr_flag = 0;
+			value = gpio_get_value(ds->info->keymap[i].gpio);
+			req_flags = value ? IRQF_TRIGGER_FALLING: IRQF_TRIGGER_RISING;
+			KEY_LOGI("keycode = %d, gpio = %d, type = %lx", ds->info->keymap[i].code, value, req_flags);
+		}
+		else
+			req_flags = IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING;
+
 		err = request_any_context_irq(irq, gpio_event_input_irq_handler,
 				  req_flags, "gpio_keys", &ds->key_state[i]);
 		if (err < 0) {
-			KEY_LOGE("gpio_event_input_request_irqs: request_irq "
-				"failed for input %d, irq %d, err %d\n",
+			KEY_LOGE("KEY_ERR: %s: request_irq "
+				"failed for input %d, irq %d, err %d\n", __func__,
 				ds->info->keymap[i].gpio, irq, err);
 			goto err_request_irq_failed;
 		}
@@ -447,8 +466,8 @@ int gpio_event_input_func(struct gpio_event_input_devs *input_devs,
 					di->keymap_size, GFP_KERNEL);
 		if (ds == NULL) {
 			ret = -ENOMEM;
-			KEY_LOGE("gpio_event_input_func: "
-				"Failed to allocate private data\n");
+			KEY_LOGE("KEY_ERR: %s: "
+				"Failed to allocate private data\n", __func__);
 			goto err_ds_alloc_failed;
 		}
 		ds->debounce_count = di->keymap_size;
@@ -464,9 +483,9 @@ int gpio_event_input_func(struct gpio_event_input_devs *input_devs,
 		for (i = 0; i < di->keymap_size; i++) {
 			int dev = di->keymap[i].dev;
 			if (dev >= input_devs->count) {
-				KEY_LOGE("gpio_event_input_func: bad device "
+				KEY_LOGE("KEY_ERR: %s: bad device "
 					"index %d >= %d for key code %d\n",
-					dev, input_devs->count,
+					__func__, dev, input_devs->count,
 					di->keymap[i].code);
 				ret = -EINVAL;
 				goto err_bad_keymap;
@@ -480,15 +499,15 @@ int gpio_event_input_func(struct gpio_event_input_devs *input_devs,
 		for (i = 0; i < di->keymap_size; i++) {
 			ret = gpio_request(di->keymap[i].gpio, "gpio_kp_in");
 			if (ret) {
-				KEY_LOGE("gpio_event_input_func: gpio_request "
-					"failed for %d\n", di->keymap[i].gpio);
+				KEY_LOGE("KEY_ERR: %s: gpio_request "
+					"failed for %d\n", __func__, di->keymap[i].gpio);
 				goto err_gpio_request_failed;
 			}
 			ret = gpio_direction_input(di->keymap[i].gpio);
 			if (ret) {
-				KEY_LOGE("gpio_event_input_func: "
+				KEY_LOGE("KEY_ERR: %s: "
 					"gpio_direction_input failed for %d\n",
-					di->keymap[i].gpio);
+					__func__, di->keymap[i].gpio);
 				goto err_gpio_configure_failed;
 			}
 		}
@@ -505,8 +524,8 @@ int gpio_event_input_func(struct gpio_event_input_devs *input_devs,
 			return ret;
 		}
 		if (sysfs_create_file(keyboard_kobj, &dev_attr_vol_wakeup.attr))
-			KEY_LOGE("gpio_event_input_func: sysfs_create_file "
-					"return %d\n", ret);
+			KEY_LOGE("KEY_ERR: %s: sysfs_create_file "
+					"return %d\n", __func__, ret);
 		wakeup_bitmask = 0;
 		set_wakeup = 0;
 

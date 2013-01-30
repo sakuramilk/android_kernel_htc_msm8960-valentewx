@@ -17,14 +17,14 @@
 #include <asm/mach/mmc.h>
 
 #include "devices.h"
-#include "board-valente_wx.h"
+#include "board-valente_wx_c9.h"
 #include "proc_comm.h"
 #include "board-common-wimax.h"
 
 #include <mach/msm_iomap.h>
 #include "mpm.h"
 #include <linux/irq.h>
-#include "board-valente_wx-mmc.h"
+#include "board-valente_wx_c9-mmc.h"
 
 #include <mach/rpm.h>
 #include <mach/rpm-regulator.h>
@@ -109,48 +109,48 @@ static uint32_t msm_rpm_get_swfi_latency(void)
 #ifdef CONFIG_WIMAX
 /* ---- WIMAX ---- */
 static uint32_t wimax_on_gpio_table[] = {
-	GPIO_CFG(VALENTE_WX_WIMAX_SDIO_CLK_CPU, 1, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_UP, GPIO_CFG_8MA), /* CLK */
-	GPIO_CFG(VALENTE_WX_WIMAX_SDIO_CMD, 1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* CMD */
-	GPIO_CFG(VALENTE_WX_WIMAX_SDIO_D0,  1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* DAT0 */
-	GPIO_CFG(VALENTE_WX_WIMAX_SDIO_D1,  1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* DAT1 */
-	GPIO_CFG(VALENTE_WX_WIMAX_SDIO_D2,  1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* DAT2 */
-	GPIO_CFG(VALENTE_WX_WIMAX_SDIO_D3,  1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* DAT3 */
+	GPIO_CFG(VALENTE_WX_C9_WIMAX_SDIO_CLK_CPU, 1, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_UP, GPIO_CFG_8MA), /* CLK */
+	GPIO_CFG(VALENTE_WX_C9_WIMAX_SDIO_CMD, 1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* CMD */
+	GPIO_CFG(VALENTE_WX_C9_WIMAX_SDIO_D0,  1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* DAT0 */
+	GPIO_CFG(VALENTE_WX_C9_WIMAX_SDIO_D1,  1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* DAT1 */
+	GPIO_CFG(VALENTE_WX_C9_WIMAX_SDIO_D2,  1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* DAT2 */
+	GPIO_CFG(VALENTE_WX_C9_WIMAX_SDIO_D3,  1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* DAT3 */
 };
 
 static uint32_t wimax_reset_table[] = {
-	GPIO_CFG(VALENTE_WX_WIMAX_EXT_RSTz,   0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),    /* EXT_RST */
-	GPIO_CFG(VALENTE_WX_WIMAX_EXT_RSTz,   0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),    /* EXT_RST */
+	GPIO_CFG(VALENTE_WX_C9_WIMAX_EXT_RSTz,   0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),    /* EXT_RST */
+	GPIO_CFG(VALENTE_WX_C9_WIMAX_EXT_RSTz,   0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),    /* EXT_RST */
 };
 
 static uint32_t wimax_off_gpio_table[] = {
-	GPIO_CFG(VALENTE_WX_WIMAX_SDIO_CLK_CPU, 0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* CLK */
-	GPIO_CFG(VALENTE_WX_WIMAX_SDIO_CMD, 0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* CMD */
-	GPIO_CFG(VALENTE_WX_WIMAX_SDIO_D0,  0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* DAT0 */
-	GPIO_CFG(VALENTE_WX_WIMAX_SDIO_D1,  0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* DAT1 */
-	GPIO_CFG(VALENTE_WX_WIMAX_SDIO_D2,  0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* DAT2 */
-	GPIO_CFG(VALENTE_WX_WIMAX_SDIO_D3,  0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* DAT3 */
+	GPIO_CFG(VALENTE_WX_C9_WIMAX_SDIO_CLK_CPU, 0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* CLK */
+	GPIO_CFG(VALENTE_WX_C9_WIMAX_SDIO_CMD, 0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* CMD */
+	GPIO_CFG(VALENTE_WX_C9_WIMAX_SDIO_D0,  0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* DAT0 */
+	GPIO_CFG(VALENTE_WX_C9_WIMAX_SDIO_D1,  0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* DAT1 */
+	GPIO_CFG(VALENTE_WX_C9_WIMAX_SDIO_D2,  0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* DAT2 */
+	GPIO_CFG(VALENTE_WX_C9_WIMAX_SDIO_D3,  0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* DAT3 */
 };
 
 static uint32_t wimax_initial_gpio_table[] = {
-	GPIO_CFG(VALENTE_WX_WIMAX_SDIO_CLK_CPU, 0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* CLK */
-	GPIO_CFG(VALENTE_WX_WIMAX_SDIO_CMD, 0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* CMD */
-	GPIO_CFG(VALENTE_WX_WIMAX_SDIO_D0,  0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* DAT0 */
-	GPIO_CFG(VALENTE_WX_WIMAX_SDIO_D1,  0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* DAT1 */
-	GPIO_CFG(VALENTE_WX_WIMAX_SDIO_D2,  0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* DAT2 */
-	GPIO_CFG(VALENTE_WX_WIMAX_SDIO_D3,  0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* DAT3 */
-	GPIO_CFG(VALENTE_WX_WIMAX_EXT_RSTz,   0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),    /* EXT_RST */
+	GPIO_CFG(VALENTE_WX_C9_WIMAX_SDIO_CLK_CPU, 0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* CLK */
+	GPIO_CFG(VALENTE_WX_C9_WIMAX_SDIO_CMD, 0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* CMD */
+	GPIO_CFG(VALENTE_WX_C9_WIMAX_SDIO_D0,  0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* DAT0 */
+	GPIO_CFG(VALENTE_WX_C9_WIMAX_SDIO_D1,  0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* DAT1 */
+	GPIO_CFG(VALENTE_WX_C9_WIMAX_SDIO_D2,  0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* DAT2 */
+	GPIO_CFG(VALENTE_WX_C9_WIMAX_SDIO_D3,  0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA), /* DAT3 */
+	GPIO_CFG(VALENTE_WX_C9_WIMAX_EXT_RSTz,   0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),    /* EXT_RST */
 };
 
 static int mmc_wimax_initial_gpio_set_value(void)
 {
 	printk(KERN_INFO "%s:[WIMAX] set GPIO value to default \n", __func__);
-	gpio_set_value(VALENTE_WX_WIMAX_SDIO_CLK_CPU,0);
-	gpio_set_value(VALENTE_WX_WIMAX_SDIO_CMD,0);
-	gpio_set_value(VALENTE_WX_WIMAX_SDIO_D0,0);
-	gpio_set_value(VALENTE_WX_WIMAX_SDIO_D1,0);
-	gpio_set_value(VALENTE_WX_WIMAX_SDIO_D2,0);
-	gpio_set_value(VALENTE_WX_WIMAX_SDIO_D3,0);
-	gpio_set_value(VALENTE_WX_WIMAX_EXT_RSTz,0);
+	gpio_set_value(VALENTE_WX_C9_WIMAX_SDIO_CLK_CPU,0);
+	gpio_set_value(VALENTE_WX_C9_WIMAX_SDIO_CMD,0);
+	gpio_set_value(VALENTE_WX_C9_WIMAX_SDIO_D0,0);
+	gpio_set_value(VALENTE_WX_C9_WIMAX_SDIO_D1,0);
+	gpio_set_value(VALENTE_WX_C9_WIMAX_SDIO_D2,0);
+	gpio_set_value(VALENTE_WX_C9_WIMAX_SDIO_D3,0);
+	gpio_set_value(VALENTE_WX_C9_WIMAX_EXT_RSTz,0);
 	return 0;
 }
 
@@ -234,37 +234,37 @@ struct pm8xxx_mpp_init {
 
 
 static struct pm8xxx_gpio_init wimax_init_pmgpios[] __initdata = {
-	PM8XXX_GPIO_OUTPUT_STRE_LOW(VALENTE_WX_V_WIMAX_PVDD_EN, 0),
-	PM8XXX_GPIO_OUTPUT_STRE_LOW(VALENTE_WX_V_WIMAX_DVDD_EN, 0),
-	PM8XXX_GPIO_OUTPUT_STRE_HIGH(VALENTE_WX_V_WIMAX_1V2_RF_EN, 0),
-	PM8XXX_GPIO_OUTPUT_STRE_LOW(VALENTE_WX_WIMAX_SLEEP_CLK, 0),
-	PM8XXX_GPIO_INPUT_FATAL_ERROR(VALENTE_WX_FATAL_ERROR_IND, PM_GPIO_PULL_DN),
+	PM8XXX_GPIO_OUTPUT_STRE_LOW(VALENTE_WX_C9_V_WIMAX_PVDD_EN, 0),
+	PM8XXX_GPIO_OUTPUT_STRE_LOW(VALENTE_WX_C9_V_WIMAX_DVDD_EN, 0),
+	PM8XXX_GPIO_OUTPUT_STRE_HIGH(VALENTE_WX_C9_V_WIMAX_1V2_RF_EN, 0),
+	PM8XXX_GPIO_OUTPUT_STRE_LOW(VALENTE_WX_C9_WIMAX_SLEEP_CLK, 0),
+	PM8XXX_GPIO_INPUT_FATAL_ERROR(VALENTE_WX_C9_FATAL_ERROR_IND, PM_GPIO_PULL_DN),
 };
 
 static struct pm8xxx_gpio_init wimax_pvdd_pmgpios[] = {
-	PM8XXX_GPIO_OUTPUT_STRE_LOW(VALENTE_WX_V_WIMAX_PVDD_EN, 0),
-	PM8XXX_GPIO_OUTPUT_STRE_LOW(VALENTE_WX_V_WIMAX_PVDD_EN, 1),
+	PM8XXX_GPIO_OUTPUT_STRE_LOW(VALENTE_WX_C9_V_WIMAX_PVDD_EN, 0),
+	PM8XXX_GPIO_OUTPUT_STRE_LOW(VALENTE_WX_C9_V_WIMAX_PVDD_EN, 1),
 };
 
 static struct pm8xxx_gpio_init wimax_dvdd_pmgpios[] = {
-	PM8XXX_GPIO_OUTPUT_STRE_LOW(VALENTE_WX_V_WIMAX_DVDD_EN, 0),
-	PM8XXX_GPIO_OUTPUT_STRE_LOW(VALENTE_WX_V_WIMAX_DVDD_EN, 1),
+	PM8XXX_GPIO_OUTPUT_STRE_LOW(VALENTE_WX_C9_V_WIMAX_DVDD_EN, 0),
+	PM8XXX_GPIO_OUTPUT_STRE_LOW(VALENTE_WX_C9_V_WIMAX_DVDD_EN, 1),
 };
 
 static struct pm8xxx_gpio_init wimax_1v2_pmgpios[] = {
-	PM8XXX_GPIO_OUTPUT_STRE_HIGH(VALENTE_WX_V_WIMAX_1V2_RF_EN, 0),
-	PM8XXX_GPIO_OUTPUT_STRE_HIGH(VALENTE_WX_V_WIMAX_1V2_RF_EN, 1),
+	PM8XXX_GPIO_OUTPUT_STRE_HIGH(VALENTE_WX_C9_V_WIMAX_1V2_RF_EN, 0),
+	PM8XXX_GPIO_OUTPUT_STRE_HIGH(VALENTE_WX_C9_V_WIMAX_1V2_RF_EN, 1),
 };
 
 static struct pm8xxx_gpio_init wimax_sleep_clk_pmgpios[] = {
-	PM8XXX_GPIO_OUTPUT_STRE_LOW(VALENTE_WX_WIMAX_SLEEP_CLK, 0),
-	PM8XXX_GPIO_OUTPUT_FUNC(VALENTE_WX_WIMAX_SLEEP_CLK, 0, PM_GPIO_FUNC_1),
+	PM8XXX_GPIO_OUTPUT_STRE_LOW(VALENTE_WX_C9_WIMAX_SLEEP_CLK, 0),
+	PM8XXX_GPIO_OUTPUT_FUNC(VALENTE_WX_C9_WIMAX_SLEEP_CLK, 0, PM_GPIO_FUNC_1),
 };
 
 static void (*wimax_status_cb)(int card_present, void *dev_id);
 static void *wimax_status_cb_devid;
 static int mmc_wimax_cd = 0;
-static int mmc_wimax_hostwakeup_gpio = PM8921_GPIO_PM_TO_SYS(VALENTE_WX_FATAL_ERROR_IND);
+static int mmc_wimax_hostwakeup_gpio = PM8921_GPIO_PM_TO_SYS(VALENTE_WX_C9_FATAL_ERROR_IND);
 
 static int mmc_wimax_status_register(void (*callback)(int card_present, void *dev_id), void *dev_id)
 {
@@ -315,7 +315,7 @@ int mmc_wimax_power(int on)
 	printk(KERN_INFO "[WIMAX] %s on=%d\n", __func__,on);
 
 	if (on)	{
-		gpio_set_value(VALENTE_WX_WIMAX_EXT_RSTz,0);
+		gpio_set_value(VALENTE_WX_C9_WIMAX_EXT_RSTz,0);
 
 		pm8xxx_gpio_config(wimax_pvdd_pmgpios[1].gpio, &wimax_pvdd_pmgpios[1].config);
 		msleep(10);
@@ -336,12 +336,12 @@ int mmc_wimax_power(int on)
 
 		msleep(3);
 		gpio_tlmm_config(wimax_reset_table[1], GPIO_CFG_ENABLE);
-		gpio_set_value(VALENTE_WX_WIMAX_EXT_RSTz,1);
+		gpio_set_value(VALENTE_WX_C9_WIMAX_EXT_RSTz,1);
 
 	} else {
 		/*Power OFF sequence*/
 		gpio_tlmm_config(wimax_reset_table[0], GPIO_CFG_ENABLE);
-		gpio_set_value(VALENTE_WX_WIMAX_EXT_RSTz,0);
+		gpio_set_value(VALENTE_WX_C9_WIMAX_EXT_RSTz,0);
 
 		for (i = 0; i < ARRAY_SIZE(wimax_off_gpio_table); i++) {
 			rc = gpio_tlmm_config(wimax_off_gpio_table[i], GPIO_CFG_ENABLE);
@@ -366,11 +366,34 @@ int mmc_wimax_power(int on)
 }
 EXPORT_SYMBOL(mmc_wimax_power);
 
+/* UART */
+
+uint32_t usbuart_pin_enable_usb_table[] = {
+	GPIO_CFG(VALENTE_WX_C9_MHL_USB_ENz, 0, GPIO_CFG_INPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_2MA),
+};
+
+uint32_t usbuart_pin_enable_uart_table[] = {
+	GPIO_CFG(VALENTE_WX_C9_MHL_USB_ENz, 0, GPIO_CFG_INPUT, GPIO_CFG_PULL_UP, GPIO_CFG_2MA),
+};
+
+void valente_wx_c9_usb_uart_switch(int nvbus)
+{
+	printk(KERN_INFO "%s: %s, rev=%d\n", __func__, nvbus ? "uart" : "usb", system_rev);
+	if(nvbus == 1) { /* vbus gone, pin pull up */
+		gpio_tlmm_config(usbuart_pin_enable_uart_table[0], GPIO_CFG_ENABLE);
+	} else {	/* vbus present, pin pull low */
+		gpio_tlmm_config(usbuart_pin_enable_usb_table[0], GPIO_CFG_ENABLE);
+	}
+}
+
 int wimax_uart_switch = 0;
 int mmc_wimax_uart_switch(int uart)
 {
 	printk(KERN_INFO "[WIMAX] %s uart:%d\n", __func__, uart);
 	wimax_uart_switch = uart;
+
+    gpio_set_value(VALENTE_WX_C9_CPUz_WIMAX_SW, uart?1:0); /* CPU_WIMAX_SW */
+	valente_wx_c9_usb_uart_switch(1);
 
 	return 0;
 }
@@ -379,7 +402,7 @@ EXPORT_SYMBOL(mmc_wimax_uart_switch);
 int mmc_wimax_get_uart_switch(void)
 {
 	printk(KERN_INFO "[WIMAX] %s uart:%d\n", __func__, wimax_uart_switch);
-	return wimax_uart_switch;
+	return wimax_uart_switch?1:0;
 }
 EXPORT_SYMBOL(mmc_wimax_get_uart_switch);
 
@@ -393,7 +416,7 @@ EXPORT_SYMBOL(mmc_wimax_get_hostwakeup_gpio);
 /*8X60 PROJECT need to use Marco PM8058_GPIO_IRQ to decode the IRQ number(id) for PMIC GPIO*/
 int mmc_wimax_get_hostwakeup_IRQ_ID(void)
 {
-	return PM8921_GPIO_IRQ(PM8921_IRQ_BASE, VALENTE_WX_FATAL_ERROR_IND);
+	return PM8921_GPIO_IRQ(PM8921_IRQ_BASE, VALENTE_WX_C9_FATAL_ERROR_IND);
 }
 EXPORT_SYMBOL(mmc_wimax_get_hostwakeup_IRQ_ID);
 
@@ -403,7 +426,7 @@ void mmc_wimax_enable_host_wakeup(int on)
 		if (on) {
 			if (!mmc_wimax_get_gpio_irq_enabled()) {
 				if (printk_ratelimit())
-					printk(KERN_INFO "[WIMAX] set PMIC GPIO%d as wakeup source on IRQ %d\n", VALENTE_WX_FATAL_ERROR_IND+1, mmc_wimax_get_hostwakeup_IRQ_ID());
+					printk(KERN_INFO "[WIMAX] set PMIC GPIO%d as wakeup source on IRQ %d\n", VALENTE_WX_C9_FATAL_ERROR_IND+1, mmc_wimax_get_hostwakeup_IRQ_ID());
 				enable_irq(mmc_wimax_get_hostwakeup_IRQ_ID());
 				enable_irq_wake(mmc_wimax_get_hostwakeup_IRQ_ID());
 				mmc_wimax_set_gpio_irq_enabled(1);
@@ -411,7 +434,7 @@ void mmc_wimax_enable_host_wakeup(int on)
 		} else {
 			if (mmc_wimax_get_gpio_irq_enabled()) {
 				if (printk_ratelimit())
-					printk(KERN_INFO "[WIMAX] disable PMIC GPIO%d wakeup source\n", VALENTE_WX_FATAL_ERROR_IND+1);
+					printk(KERN_INFO "[WIMAX] disable PMIC GPIO%d wakeup source\n", VALENTE_WX_C9_FATAL_ERROR_IND+1);
 				disable_irq_wake(mmc_wimax_get_hostwakeup_IRQ_ID());
 				disable_irq_nosync(mmc_wimax_get_hostwakeup_IRQ_ID());
 				mmc_wimax_set_gpio_irq_enabled(0);
@@ -423,12 +446,12 @@ void mmc_wimax_enable_host_wakeup(int on)
 EXPORT_SYMBOL(mmc_wimax_enable_host_wakeup);
 #endif
 
-int __init valente_wx_init_mmc()
+int __init valente_wx_c9_init_mmc()
 {
 #ifdef CONFIG_WIMAX
 	int i, rc;
 
-	printk(KERN_INFO "valente_wx: %s\n", __func__);
+	printk(KERN_INFO "valente_wx_c9: %s\n", __func__);
 
 	/* SDC2: WiMAX */
 	/* PM QoS for wimax */

@@ -19,10 +19,10 @@
 #include <mach/debug_display.h>
 
 #include "../devices.h"
-#include "../board-valente_wx.h"
+#include "../board-valente_wx_c9.h"
 
-static struct dsi_buf valente_wx_panel_tx_buf;
-static struct dsi_buf valente_wx_panel_rx_buf;
+static struct dsi_buf valente_wx_c9_panel_tx_buf;
+static struct dsi_buf valente_wx_c9_panel_rx_buf;
 static int acl_enable = 0;
 
 static char enter_sleep[2] = {0x10, 0x00}; /* DTYPE_DCS_WRITE */
@@ -156,8 +156,8 @@ static uint32 mipi_samsung_manufacture_id(struct msm_fb_data_type *mfd)
 	struct dsi_cmd_desc *cmd;
 /* 	uint32 *lp; */
 
-	tp = &valente_wx_panel_tx_buf;
-	rp = &valente_wx_panel_rx_buf;
+	tp = &valente_wx_c9_panel_tx_buf;
+	rp = &valente_wx_c9_panel_rx_buf;
 	mipi_dsi_buf_init(rp);
 	mipi_dsi_buf_init(tp);
 
@@ -313,7 +313,7 @@ static struct dsi_cmd_desc samsung_cmd_backlight_cmds[] = {
 	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,  sizeof(vle_g1), vle_g1},
 };
 
-static unsigned char valente_wx_shrink_pwm(int val)
+static unsigned char valente_wx_c9_shrink_pwm(int val)
 {
 	int i;
 	int level, frac, shrink_br = 255;
@@ -357,7 +357,7 @@ static unsigned char valente_wx_shrink_pwm(int val)
 	return val;
 }
 
-static unsigned char valente_wx_shrink_pwm_c2(int val)
+static unsigned char valente_wx_c9_shrink_pwm_c2(int val)
 {
 	int i;
 	int level, frac, shrink_br = 255;
@@ -444,9 +444,9 @@ static void mipi_dsi_set_backlight(struct msm_fb_data_type *mfd)
 		return;
 
 	if (panel_type == PANEL_ID_VALENTE_SAMSUNG_SG_C3)
-		valente_wx_shrink_pwm_c2(mfd->bl_level);
+		valente_wx_c9_shrink_pwm_c2(mfd->bl_level);
 	else
-		valente_wx_shrink_pwm(mfd->bl_level);
+		valente_wx_c9_shrink_pwm(mfd->bl_level);
 	mutex_lock(&mfd->dma->ov_mutex);
 
 /* Remove the check first for impact MFG test. Command by adb to set backlight not work */
@@ -462,7 +462,7 @@ static void mipi_dsi_set_backlight(struct msm_fb_data_type *mfd)
 		mdp4_dsi_blt_dmap_busy_wait(mfd);
 		mipi_dsi_mdp_busy_wait(mfd);
 	}
-	mipi_dsi_cmds_tx(mfd, &valente_wx_panel_tx_buf, samsung_cmd_backlight_cmds,
+	mipi_dsi_cmds_tx(mfd, &valente_wx_c9_panel_tx_buf, samsung_cmd_backlight_cmds,
 			ARRAY_SIZE(samsung_cmd_backlight_cmds));
 	bl_level_old = mfd->bl_level;
 	PR_DISP_DEBUG("%s+ bl_level=%d\n", __func__, mfd->bl_level);
@@ -474,7 +474,7 @@ static void mipi_dsi_set_backlight(struct msm_fb_data_type *mfd)
 
 static int mipi_lcd_on = 1;
 
-static int valente_wx_lcd_on(struct platform_device *pdev)
+static int valente_wx_c9_lcd_on(struct platform_device *pdev)
 {
 	struct msm_fb_data_type *mfd;
 	struct mipi_panel_info *mipi;
@@ -493,20 +493,20 @@ static int valente_wx_lcd_on(struct platform_device *pdev)
 		if (!mipi_lcd_on) {
 			mipi_dsi_cmd_bta_sw_trigger(); /* clean up ack_err_status */
 			if (panel_type == PANEL_ID_VALENTE_SAMSUNG_SG) {
-				printk(KERN_INFO "valente_wx_lcd_on PANEL_ID_VALENTE_WX_SAMSUNG_SG\n");
-				mipi_dsi_cmds_tx(mfd, &valente_wx_panel_tx_buf, samsung_cmd_on_cmds,
+				printk(KERN_INFO "valente_wx_c9_lcd_on PANEL_ID_VALENTE_WX_C9_SAMSUNG_SG\n");
+				mipi_dsi_cmds_tx(mfd, &valente_wx_c9_panel_tx_buf, samsung_cmd_on_cmds,
 					ARRAY_SIZE(samsung_cmd_on_cmds));
 			} else if (panel_type == PANEL_ID_VALENTE_SAMSUNG_SG_C2){
-				printk(KERN_INFO "valente_wx_lcd_on PANEL_ID_VALENTE_WX_SAMSUNG_SG_C2\n");
-				mipi_dsi_cmds_tx(mfd, &valente_wx_panel_tx_buf, samsung_cmd_on_cmds,
+				printk(KERN_INFO "valente_wx_c9_lcd_on PANEL_ID_VALENTE_WX_C9_SAMSUNG_SG_C2\n");
+				mipi_dsi_cmds_tx(mfd, &valente_wx_c9_panel_tx_buf, samsung_cmd_on_cmds,
 					ARRAY_SIZE(samsung_cmd_on_cmds));
 			} else if (panel_type == PANEL_ID_VALENTE_SAMSUNG_SG_C3){
-				printk(KERN_INFO "valente_wx_lcd_on PANEL_ID_VALENTE_WX_SAMSUNG_SG_C3\n");
-				mipi_dsi_cmds_tx(mfd, &valente_wx_panel_tx_buf, samsung_cmd_on_cmds_c2,
+				printk(KERN_INFO "valente_wx_c9_lcd_on PANEL_ID_VALENTE_WX_C9_SAMSUNG_SG_C3\n");
+				mipi_dsi_cmds_tx(mfd, &valente_wx_c9_panel_tx_buf, samsung_cmd_on_cmds_c2,
 					ARRAY_SIZE(samsung_cmd_on_cmds_c2));
 			} else {
 				PR_DISP_ERR("%s: panel_type is not supported!(%d)\n", __func__, panel_type);
-				mipi_dsi_cmds_tx(mfd, &valente_wx_panel_tx_buf, samsung_cmd_on_cmds,
+				mipi_dsi_cmds_tx(mfd, &valente_wx_c9_panel_tx_buf, samsung_cmd_on_cmds,
 					ARRAY_SIZE(samsung_cmd_on_cmds));
 			}
 		}
@@ -520,7 +520,7 @@ static int valente_wx_lcd_on(struct platform_device *pdev)
 	return 0;
 }
 
-static void valente_wx_display_on(struct msm_fb_data_type *mfd)
+static void valente_wx_c9_display_on(struct msm_fb_data_type *mfd)
 {
        mutex_lock(&mfd->dma->ov_mutex);
 
@@ -530,11 +530,11 @@ static void valente_wx_display_on(struct msm_fb_data_type *mfd)
                mipi_dsi_mdp_busy_wait(mfd);
        }
 
-       mipi_dsi_cmds_tx(mfd, &valente_wx_panel_tx_buf, samsung_display_on_cmds,
+       mipi_dsi_cmds_tx(mfd, &valente_wx_c9_panel_tx_buf, samsung_display_on_cmds,
                ARRAY_SIZE(samsung_display_on_cmds));
 
 	   if (acl_enable) {
-		   mipi_dsi_cmds_tx(mfd, &valente_wx_panel_tx_buf, samsung_acl_on_cmd,
+		   mipi_dsi_cmds_tx(mfd, &valente_wx_c9_panel_tx_buf, samsung_acl_on_cmd,
 			   ARRAY_SIZE(samsung_acl_on_cmd));
 		   acl_enable = 1;
 		   PR_DISP_INFO("%s acl enable", __func__);
@@ -542,7 +542,7 @@ static void valente_wx_display_on(struct msm_fb_data_type *mfd)
        mutex_unlock(&mfd->dma->ov_mutex);
 }
 
-static int valente_wx_lcd_off(struct platform_device *pdev)
+static int valente_wx_c9_lcd_off(struct platform_device *pdev)
 {
 	struct msm_fb_data_type *mfd;
 
@@ -560,7 +560,7 @@ static int valente_wx_lcd_off(struct platform_device *pdev)
 	// Remove mutex temporarily
 	//mutex_lock(&mfd->dma->ov_mutex);
 	*/
-	mipi_dsi_cmds_tx(mfd, &valente_wx_panel_tx_buf, samsung_display_off_cmds,
+	mipi_dsi_cmds_tx(mfd, &valente_wx_c9_panel_tx_buf, samsung_display_off_cmds,
 			ARRAY_SIZE(samsung_display_off_cmds));
 	/*
 	//mutex_unlock(&mfd->dma->ov_mutex);
@@ -575,7 +575,7 @@ static int valente_wx_lcd_off(struct platform_device *pdev)
 
 
 
-static void valente_wx_set_backlight(struct msm_fb_data_type *mfd)
+static void valente_wx_c9_set_backlight(struct msm_fb_data_type *mfd)
 {
 	int bl_level;
 
@@ -588,7 +588,7 @@ static void valente_wx_set_backlight(struct msm_fb_data_type *mfd)
 }
 
 #if defined (CONFIG_MSM_AUTOBL_ENABLE)
-static int valente_wx_samsung_acl_enable(int on, struct msm_fb_data_type *mfd)
+static int valente_wx_c9_samsung_acl_enable(int on, struct msm_fb_data_type *mfd)
 {
 	static int first_time = 1;
 	static unsigned long last_autobkl_stat = 0, cur_autobkl_stat = 0;
@@ -612,14 +612,14 @@ static int valente_wx_samsung_acl_enable(int on, struct msm_fb_data_type *mfd)
 
 	if (cur_autobkl_stat == 8 && !first_time) {
 		if (panel_type == PANEL_ID_VALENTE_SAMSUNG_SG || panel_type == PANEL_ID_VALENTE_SAMSUNG_SG_C2 || PANEL_ID_VALENTE_SAMSUNG_SG_C3) {
-			mipi_dsi_cmds_tx(mfd, &valente_wx_panel_tx_buf, samsung_acl_off_cmd,
+			mipi_dsi_cmds_tx(mfd, &valente_wx_c9_panel_tx_buf, samsung_acl_off_cmd,
 				ARRAY_SIZE(samsung_acl_off_cmd));
 			acl_enable = 0;
 			PR_DISP_INFO("%s acl disable", __func__);
 		}
 	} else if (cur_autobkl_stat == 12) {
 		if (panel_type == PANEL_ID_VALENTE_SAMSUNG_SG || panel_type == PANEL_ID_VALENTE_SAMSUNG_SG_C2 || PANEL_ID_VALENTE_SAMSUNG_SG_C3) {
-			mipi_dsi_cmds_tx(mfd, &valente_wx_panel_tx_buf, samsung_acl_on_cmd,
+			mipi_dsi_cmds_tx(mfd, &valente_wx_c9_panel_tx_buf, samsung_acl_on_cmd,
 				ARRAY_SIZE(samsung_acl_on_cmd));
 			acl_enable = 1;
 			PR_DISP_INFO("%s acl enable", __func__);
@@ -631,7 +631,7 @@ static int valente_wx_samsung_acl_enable(int on, struct msm_fb_data_type *mfd)
 }
 #endif
 
-static int __devinit valente_wx_lcd_probe(struct platform_device *pdev)
+static int __devinit valente_wx_c9_lcd_probe(struct platform_device *pdev)
 {
 	msm_fb_add_device(pdev);
 
@@ -640,26 +640,26 @@ static int __devinit valente_wx_lcd_probe(struct platform_device *pdev)
 
 static int mipi_dsi_panel_power(int on);
 
-static void valente_wx_lcd_shutdown(struct platform_device *pdev)
+static void valente_wx_c9_lcd_shutdown(struct platform_device *pdev)
 {
 	mipi_dsi_panel_power(0);
 }
 
 static struct platform_driver this_driver = {
-	.probe  = valente_wx_lcd_probe,
-	.shutdown = valente_wx_lcd_shutdown,
+	.probe  = valente_wx_c9_lcd_probe,
+	.shutdown = valente_wx_c9_lcd_shutdown,
 	.driver = {
 		.name   = "mipi_samsung",
 	},
 };
 
 static struct msm_fb_panel_data samsung_panel_data = {
-	.on		= valente_wx_lcd_on,
-	.off		= valente_wx_lcd_off,
-	.set_backlight = valente_wx_set_backlight,
-	.display_on = valente_wx_display_on,
+	.on		= valente_wx_c9_lcd_on,
+	.off		= valente_wx_c9_lcd_off,
+	.set_backlight = valente_wx_c9_set_backlight,
+	.display_on = valente_wx_c9_display_on,
 #if defined (CONFIG_MSM_AUTOBL_ENABLE)
-	.autobl_enable = valente_wx_samsung_acl_enable
+	.autobl_enable = valente_wx_c9_samsung_acl_enable
 #endif
 };
 
@@ -839,9 +839,9 @@ static int mipi_dsi_panel_power(int on)
 			return -EINVAL;
 		}
 
-		rc = gpio_request(VALENTE_WX_LCD_RSTz, "LCM_RST_N");
+		rc = gpio_request(VALENTE_WX_C9_LCD_RSTz, "LCM_RST_N");
 		if (rc) {
-			PR_DISP_ERR("%s:LCM gpio %d request failed, rc=%d\n", __func__,  VALENTE_WX_LCD_RSTz, rc);
+			PR_DISP_ERR("%s:LCM gpio %d request failed, rc=%d\n", __func__,  VALENTE_WX_C9_LCD_RSTz, rc);
 			return -EINVAL;
 		}
 
@@ -882,11 +882,11 @@ static int mipi_dsi_panel_power(int on)
 
 		if (!mipi_lcd_on) {
 			hr_msleep(10);
-			gpio_set_value(VALENTE_WX_LCD_RSTz, 1);
+			gpio_set_value(VALENTE_WX_C9_LCD_RSTz, 1);
 			hr_msleep(1);
-			gpio_set_value(VALENTE_WX_LCD_RSTz, 0);
+			gpio_set_value(VALENTE_WX_C9_LCD_RSTz, 0);
 			hr_msleep(35);
-			gpio_set_value(VALENTE_WX_LCD_RSTz, 1);
+			gpio_set_value(VALENTE_WX_C9_LCD_RSTz, 1);
 		}
 		hr_msleep(60);
 
@@ -896,7 +896,7 @@ static int mipi_dsi_panel_power(int on)
 		PR_DISP_INFO("%s: off\n", __func__);
 		if (!bPanelPowerOn) return 0;
 		hr_msleep(100);
-		gpio_set_value(VALENTE_WX_LCD_RSTz, 0);
+		gpio_set_value(VALENTE_WX_C9_LCD_RSTz, 0);
 		hr_msleep(10);
 
 		if (regulator_disable(v_dsivdd)) {
@@ -927,11 +927,11 @@ static int mipi_dsi_panel_power(int on)
 }
 
 static struct mipi_dsi_platform_data mipi_dsi_pdata = {
-	.vsync_gpio = VALENTE_WX_LCD_TE,
+	.vsync_gpio = VALENTE_WX_C9_LCD_TE,
 	.dsi_power_save = mipi_dsi_panel_power,
 };
 
-static int __init valente_wx_panel_init(void)
+static int __init valente_wx_c9_panel_init(void)
 {
 	if(panel_type != PANEL_ID_NONE)
 		msm_fb_register_device("mipi_dsi", &mipi_dsi_pdata);
@@ -941,15 +941,15 @@ static int __init valente_wx_panel_init(void)
 	return 0;
 }
 
-static int __init valente_wx_panel_late_init(void)
+static int __init valente_wx_c9_panel_late_init(void)
 {
-	mipi_dsi_buf_alloc(&valente_wx_panel_tx_buf, DSI_BUF_SIZE);
-	mipi_dsi_buf_alloc(&valente_wx_panel_rx_buf, DSI_BUF_SIZE);
+	mipi_dsi_buf_alloc(&valente_wx_c9_panel_tx_buf, DSI_BUF_SIZE);
+	mipi_dsi_buf_alloc(&valente_wx_c9_panel_rx_buf, DSI_BUF_SIZE);
 
 	mipi_cmd_samsung_blue_qhd_pt_init();
 
 	return platform_driver_register(&this_driver);
 }
 
-module_init(valente_wx_panel_init);
-late_initcall(valente_wx_panel_late_init);
+module_init(valente_wx_c9_panel_init);
+late_initcall(valente_wx_c9_panel_late_init);
