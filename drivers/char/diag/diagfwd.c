@@ -241,7 +241,7 @@ drop:
 				do_gettimeofday(&t1);
 				diff = (t1.tv_sec-t0.tv_sec)*1000 + (t1.tv_usec-t0.tv_usec)/1000;
 				if (diff > 1000) {
-					pr_err("[diag-dbg] Over time (%ld) %ld.%04ld -> %ld.%04ld empty = %d\n",
+					pr_warn("[diag-dbg] Over time (%ld) %ld.%04ld -> %ld.%04ld empty = %d\n",
 						diff, (long)t0.tv_sec, t0.tv_usec/1000,
 						(long)t1.tv_sec, t1.tv_usec/1000, empty);
 				}

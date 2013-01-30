@@ -105,6 +105,9 @@ static int is_felica_file(const char *full_path)
 {
     int i;
 
+    if (full_path == NULL)
+        return RTFCTL_FILE_TYPE_NONE;
+
     for (i = 0; i < RTFCTL_FELICA_FILE_NUM; i++) {
         if (!strcmp(full_path, felica_file[i])) {
             RTFCTL_MSG("file: %s\n", full_path);
@@ -140,6 +143,9 @@ static int is_felica_RWP_file(const char *full_path)
 {
     int i;
 
+    if (full_path == NULL)
+        return RTFCTL_FILE_TYPE_NONE;
+
     for (i = 0; i < RTFCTL_FELICA_DEV_NUM; i++) {
         if (!strcmp(full_path, felica_dev[i])) {
             RTFCTL_MSG("file: %s\n", full_path);
@@ -153,6 +159,9 @@ static int is_felica_RWP_file(const char *full_path)
 static int is_felica_WP_file(const char *full_path)
 {
     int i;
+
+    if (full_path == NULL)
+        return RTFCTL_FILE_TYPE_NONE;
 
     for (i = 0; i < RTFCTL_FELICA_FILE_NUM; i++) {
         if (!strcmp(full_path, felica_file[i])) {
@@ -211,6 +220,9 @@ static int is_felica_dev(unsigned int major,unsigned int minor, const char *full
 {
     int i;
 
+    if (full_path == NULL)
+        return RTFCTL_FELICA_DEV_NONE;
+
     for (i = 0; i < RTFCTL_FELICA_DEV_NUM; i++) {
         if (!strcmp(full_path, felica_dev[i])) {
             RTFCTL_MSG("file: %s (%u, %u)\n", full_path, major, minor);
@@ -235,6 +247,9 @@ static int is_felica_dev(unsigned int major,unsigned int minor, const char *full
 static int is_felica_mode_valid(mode_t mode, const char *full_path)
 {
     int i;
+
+    if (full_path == NULL)
+        return true;
 
     for (i = 0; i < RTFCTL_FELICA_FILE_NUM; i++) {
         if (!strcmp(full_path, felica_file[i])) {
@@ -265,7 +280,7 @@ static int is_felica_mode_valid(mode_t mode, const char *full_path)
     for (i = 0; i < RTFCTL_FELICA_APK_NUM; i++) {
         if (!strcmp(full_path, felica_apk[i])) {
             RTFCTL_MSG("file: %s\n", full_path);
-            if (!(mode & 007) && current_uid() == 0)
+            if (!(mode & 003) && current_uid() == 0)
                 return true;
             else {
                 RTFCTL_MSG("uid: %d\n", current_uid());
@@ -294,6 +309,9 @@ static int is_felica_mode_valid(mode_t mode, const char *full_path)
 static int is_felica_owner_valid(uid_t uid, gid_t gid, const char *full_path)
 {
     int i;
+
+    if (full_path == NULL)
+        return 1;
 
     for (i = 0; i < RTFCTL_FELICA_FILE_NUM; i++) {
         if (!strcmp(full_path, felica_file[i])) {
@@ -324,7 +342,7 @@ static int is_felica_owner_valid(uid_t uid, gid_t gid, const char *full_path)
     for (i = 0; i < RTFCTL_FELICA_APK_NUM; i++) {
         if (!strcmp(full_path, felica_apk[i])) {
             RTFCTL_MSG("file: %s\n", full_path);
-            if ((uid == -1 || is_felica_uid(uid)) && (gid == -1 || is_felica_uid(gid)))
+            if ((uid == -1 || uid == 0) && (gid == -1 || gid == 0))
                 return 1;
             else {
                 RTFCTL_MSG("uid: %d\n", uid);
@@ -347,6 +365,25 @@ static int is_felica_owner_valid(uid_t uid, gid_t gid, const char *full_path)
         }
     }
 
+    return 0;
+}
+
+#define  parent_uid()   (current->real_parent->cred->uid)
+static int is_zygote(pid_t pid, const char *name, uid_t uid)
+{
+    if (pid == zygote_pid)
+        return 1;
+    if (name && !strcmp("zygote", name) && (uid == 0))
+        return 1;
+    return 0;
+}
+
+static int is_installd(pid_t pid, const char *name, uid_t uid)
+{
+    if (pid == installd_pid)
+        return 1;
+    if (name && !strcmp("installd", name) && (uid == 0))
+        return 1;
     return 0;
 }
 
@@ -683,19 +720,22 @@ static int rootfctrl_path_chown(struct path *path, uid_t uid, gid_t gid)
             return -EACCES;
 #endif
         }
-    } else {
+    }else {
         if ((uid != -1 && is_felica_uid(uid)) || (gid != -1 && is_felica_uid(gid))) {
+            char tcomm[sizeof(current->comm)];
+            get_task_comm(tcomm, current);
             RTFCTL_MSG("########## %s ##########\n", __FUNCTION__);
             RTFCTL_MSG("File path: %s\n", get_full_path(path, NULL, buf));
             RTFCTL_MSG(KERN_INFO "Change other file to Felica UID/GID\n");
 #if (RTFCTL_RUN_MODE != RTFCTL_TRACKING_MODE)
-            if(task_tgid_vnr(current) != installd_pid) {
+            if(!is_installd(task_tgid_vnr(current), tcomm, current_uid())) {
                 RTFCTL_MSG(KERN_INFO "Rejected...\n");
                 return -EACCES;
             }
 #endif
         }
     }
+
     return 0;
 }
 
@@ -1015,9 +1055,11 @@ static int rootfctrl_task_fix_setuid (struct cred *new, const struct cred *old, 
     pid_t ppid = task_tgid_vnr(current->real_parent);
     pid_t pid;
     char tcomm[sizeof(current->comm)];
+    char ptcomm[sizeof(current->real_parent->comm)];
 
     pid = task_tgid_vnr(current);
     get_task_comm(tcomm, current);
+    get_task_comm(ptcomm, current->real_parent);
 
 #if (RTFCTL_RUN_MODE == RTFCTL_TRACKING_MODE)
     if (is_felica_uid(new->uid)) {
@@ -1033,23 +1075,23 @@ static int rootfctrl_task_fix_setuid (struct cred *new, const struct cred *old, 
     }
 #endif
 
-    if (ppid != zygote_pid && !is_felica_uid(old->uid) && is_felica_uid(new->uid)) {
+    if (!is_zygote(ppid, ptcomm, parent_uid()) && !is_felica_uid(old->uid) && is_felica_uid(new->uid)) {
         RTFCTL_MSG("########## %s ##########\n", __FUNCTION__);
         RTFCTL_MSG("Old UID: %d -> New UID: %d\n", old->uid, new->uid);
         RTFCTL_MSG("pid: %d (%s) ppid: %d\n", pid, tcomm, ppid);
 #if (RTFCTL_RUN_MODE != RTFCTL_TRACKING_MODE)
-        if(pid != installd_pid && ppid != installd_pid) {
+        if(!is_installd(pid, tcomm, current_uid()) && !is_installd(ppid, ptcomm, parent_uid())) {
             RTFCTL_MSG(KERN_INFO "Rejected...\n");
             return -EACCES;
         }
 #endif
     }
-    if (ppid != zygote_pid && !is_felica_uid(old->gid) && is_felica_uid(new->gid)) {
+    if (!is_zygote(ppid, ptcomm, parent_uid()) && !is_felica_uid(old->gid) && is_felica_uid(new->gid)) {
         RTFCTL_MSG("########## %s ##########\n", __FUNCTION__);
         RTFCTL_MSG("Old GID: %d -> New GID: %d\n", old->gid, new->gid);
         RTFCTL_MSG("pid: %d (%s) ppid: %d\n", pid, tcomm, ppid);
 #if (RTFCTL_RUN_MODE != RTFCTL_TRACKING_MODE)
-        if(pid != installd_pid && ppid != installd_pid) {
+        if(!is_installd(pid, tcomm, current_uid()) && !is_installd(ppid, ptcomm, parent_uid())) {
             RTFCTL_MSG(KERN_INFO "Rejected...\n");
             return -EACCES;
         }
@@ -1097,6 +1139,12 @@ static struct security_operations rootfctrl_ops = {
     .task_fix_setuid    =       rootfctrl_task_fix_setuid,
 };
 
+static struct security_operations rootfctrl_recvy_ops = {
+	.name	= "rootfctrl",
+};
+
+int board_mfg_mode(void);
+
 static __init int rootfctrl_init(void)
 {
     if (!security_module_enable(&rootfctrl_ops)) {
@@ -1112,8 +1160,14 @@ static __init int rootfctrl_init(void)
         return 0;
     }
 
-    if (register_security(&rootfctrl_ops))
-        panic("rootfctrl: Unable to register with kernel.\n");
+    if (board_mfg_mode() == 2) {
+        if (register_security(&rootfctrl_recvy_ops))
+            panic("rootfctrl: Unable to register with kernel .\n");
+    }
+    else {
+        if (register_security(&rootfctrl_ops))
+            panic("rootfctrl: Unable to register with kernel.\n");
+    }
 
     return 0;
 }

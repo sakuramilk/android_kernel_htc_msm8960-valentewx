@@ -22,12 +22,15 @@
 #include <linux/slab.h>
 #include <linux/wakelock.h>
 #include <mach/board.h>
+#include <linux/fs.h>
+#include <asm/uaccess.h>
 
 #ifdef CONFIG_POWER_KEY_LED
 #include <linux/leds-pm8xxx.h>
 
 #define PWRKEYLEDON_DELAY 3*HZ
 #define PWRKEYLEDOFF_DELAY 0
+#define HW_RESET_REASON 0x44332211
 
 static int power_key_led_requested;
 static int pre_power_key_status;
@@ -106,6 +109,51 @@ struct gpio_input_state {
 };
 
 #ifdef CONFIG_POWER_KEY_LED
+static ssize_t kernel_write(struct file *file, const char *buf,
+	size_t count, loff_t pos)
+{
+	mm_segment_t old_fs;
+	ssize_t res;
+
+	old_fs = get_fs();
+	set_fs(get_ds());
+	/* The cast to a user pointer is valid due to the set_fs() */
+	res = vfs_write(file, (const char __user *)buf, count, &pos);
+	set_fs(old_fs);
+
+	return res;
+}
+
+static int set_hw_reason(int reason)
+{
+	char filename[32] = "";
+	int hw_reason = reason;
+	struct file *filp = NULL;
+	ssize_t nread;
+	int pnum = get_partition_num_by_name("misc");
+
+	if (pnum < 0) {
+		pr_info("unknown partition number for misc partition\n");
+		return 0;
+	}
+	sprintf(filename, "/dev/block/mmcblk0p%d", pnum);
+
+	filp = filp_open(filename, O_RDWR, 0);
+	if (IS_ERR(filp)) {
+		pr_info("unable to open file: %s\n", filename);
+		return PTR_ERR(filp);
+	}
+
+	filp->f_pos = 584;
+	nread = kernel_write(filp, (char *)&hw_reason, sizeof(int), filp->f_pos);
+	pr_info("wrire: %X (%d)\n", hw_reason, nread);
+
+	if (filp)
+		filp_close(filp, NULL);
+
+	return 1;
+}
+
 static void power_key_led_on_work_func(struct work_struct *dummy)
 {
 	KEY_LOGI("[PWR] %s in (%x)\n", __func__, power_key_led_requested);
@@ -113,6 +161,7 @@ static void power_key_led_on_work_func(struct work_struct *dummy)
 		pre_power_key_led_status = 1;
 		KEY_LOGI("[PWR] change power key led on\n");
 		pm8xxx_led_current_set_for_key(1);
+		set_hw_reason(HW_RESET_REASON);
 	}
 }
 static DECLARE_DELAYED_WORK(power_key_led_on_work, power_key_led_on_work_func);
@@ -131,6 +180,7 @@ static void power_key_led_off_work_func(struct work_struct *dummy)
 		pr_info("[PWR] change power key led off\n");
 		pm8xxx_led_current_set_for_key(0);
 		pre_power_key_led_status = 0;
+		set_hw_reason(0);
 	}
 }
 static DECLARE_DELAYED_WORK(power_key_led_off_work, power_key_led_off_work_func);

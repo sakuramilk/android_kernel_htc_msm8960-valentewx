@@ -971,6 +971,10 @@ static int acm_function_init(struct android_usb_function *f, struct usb_composit
 
 	config = f->config;
 	config->instances = 1;
+#ifdef CONFIG_PASCAL_DETECT
+	usb_register_notifier(&pascal_connect_status_notifier);
+	switch_dev_register(&kddi_switch);
+#endif
 	return gserial_setup(cdev->gadget, MAX_ACM_INSTANCES);
 }
 

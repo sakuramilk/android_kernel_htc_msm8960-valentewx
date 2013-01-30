@@ -1449,8 +1449,9 @@ int pm8921_is_batt_temp_fault_disable_chg(int *result)
 	is_warm = pm8xxx_adc_btm_is_warm();
 	is_vbatdet_low = pm_chg_get_rt_status(the_chip, VBATDET_LOW_IRQ);
 
-	pr_debug("is_cold=%d,is_hot=%d\n", is_cold, is_hot);
-	if ((is_cold || is_hot || (is_warm && !is_vbatdet_low)) &&
+	pr_debug("[BATT] is_cold=%d, is_hot=%d, is_warm=%d, is_vbatdet_low=%d\n",
+			is_cold, is_hot, is_warm, is_vbatdet_low);
+	if ((is_cold || (is_hot && is_warm) || (is_warm && !is_vbatdet_low)) &&
 			!flag_keep_charge_on && !flag_pa_recharge)
 		*result = 1;
 	else
@@ -3134,20 +3135,18 @@ static void dump_all(int more)
 	pr_info("\n[BATT] V=%d mV, I=%d mA, T=%d C, P=%d%%, FCC=%d, id=%d mV,"
 			" H=%d, P=%d, CHG=%d, S=%d, FSM=%d, AC=%d, USB=%d,"
 			" OVP=%d, UVP=%d, TM=%d, eoc_count=%d, vbatdet_low=%d\n"
-			"[BATT] is_ac_safety_timeout=%d, batfet_dis=0x%x,"
-			" pwrsrc_dis=0x%x, is_full=%d,"
-			" temp_fault=%d, is_bat_warm=%d, is_bat_cool=%d"
+			"[BATT] is_ac_ST=%d, batfet_dis=0x%x, pwrsrc_dis=0x%x, is_full=%d,"
+			" temp_fault=%d, is_bat_warm/cool=%d/%d, btm_warm/cool=%d/%d"
 			" ichg=%d uA, vph_pwr=%d uV, usbin=%d uV,"
 			" flag=%d%d%d%d\n",
 			vbat_mv, ibat_ma, tbat_deg, soc, fcc, id_mv,
-			health, present, charger_type, status, fsm,
-			ac_online, usb_online, ovp, uvp, thermal_mitigation,
-			eoc_count, vbatdet_low,
+			health, present, charger_type, status, fsm, ac_online, usb_online,
+			ovp, uvp, thermal_mitigation, eoc_count, vbatdet_low,
 			is_ac_safety_timeout, batt_charging_disabled,
 			pwrsrc_disabled, is_batt_full,
 			temp_fault, the_chip->is_bat_warm, the_chip->is_bat_cool,
-			ichg, vph_pwr, usbin,
-			test_power_monitor, flag_keep_charge_on,
+			pm8xxx_adc_btm_is_warm(), pm8xxx_adc_btm_is_cool(),
+			ichg, vph_pwr, usbin, test_power_monitor, flag_keep_charge_on,
 			flag_pa_recharge, flag_disable_wakelock);
 	/* check any abnormal case that we need to dump more */
 	if (more || (fsm == FSM_STATE_OFF_0) || (ibat_ma < -1000) ||

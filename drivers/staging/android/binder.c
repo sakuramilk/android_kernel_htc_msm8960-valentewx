@@ -3071,7 +3071,7 @@ static void binder_deferred_release(struct binder_proc *proc)
 		if (t) {
 			t->buffer = NULL;
 			buffer->transaction = NULL;
-			printk(KERN_ERR "binder: release proc %d, "
+			printk(KERN_WARNING "binder: release proc %d, "
 			       "transaction %d, not freed\n",
 			       proc->pid, t->debug_id);
 			/*BUG();*/

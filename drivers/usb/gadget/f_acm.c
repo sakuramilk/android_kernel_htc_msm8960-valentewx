@@ -815,10 +815,6 @@ int acm_bind_config(struct usb_configuration *c, u8 port_num)
 	acm->port.func.setup = acm_setup;
 	acm->port.func.disable = acm_disable;
 
-#ifdef CONFIG_PASCAL_DETECT
-	usb_register_notifier(&pascal_connect_status_notifier);
-#endif
-
 	status = usb_add_function(c, &acm->port.func);
 	if (status)
 		kfree(acm);

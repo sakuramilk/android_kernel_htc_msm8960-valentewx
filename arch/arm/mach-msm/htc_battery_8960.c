@@ -1248,6 +1248,13 @@ static void batt_worker(struct work_struct *work)
 	if (critical_shutdown) {
 		BATT_LOG("critical shutdown (set level=0 to force shutdown)");
 		htc_batt_info.rep.level = 0;
+		critical_shutdown = 0;
+	}
+	/* STEP: Set voltage alarm again if level is increased after charging */
+	if (critical_alarm_level < 0 && htc_batt_info.rep.level >= 5) {
+		pr_info("[BATT] critical_alarm_level: %d -> 2\n", critical_alarm_level);
+		critical_alarm_level = 2;
+		critical_alarm_level_set = critical_alarm_level + 1;
 	}
 
 	/* STEP: Check if overloading is happeneed during charging */

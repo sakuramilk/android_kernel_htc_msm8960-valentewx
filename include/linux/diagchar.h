@@ -599,4 +599,17 @@ static const uint32_t msg_bld_masks_18[] = {
 
 #define LOG_GET_ITEM_NUM(xx_code) (xx_code & 0x0FFF)
 
+/* HTC: re-define message level to prevent system treat it as fatal */
+#ifdef pr_err
+#undef pr_err
+#endif
+#define pr_err(fmt, args...) \
+	printk(KERN_WARNING pr_fmt(fmt), ## args)
+
+#ifdef pr_alert
+#undef pr_alert
+#endif
+#define pr_alert(fmt, args...) \
+	printk(KERN_WARNING pr_fmt(fmt), ## args)
+
 #endif

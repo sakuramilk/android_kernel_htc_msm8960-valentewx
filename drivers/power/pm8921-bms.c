@@ -17,6 +17,7 @@
 #include <linux/platform_device.h>
 #include <linux/errno.h>
 #include <linux/mfd/pm8xxx/pm8921-bms.h>
+#include <linux/mfd/pm8xxx/pm8921-charger.h>
 #include <linux/mfd/pm8xxx/core.h>
 #include <linux/mfd/pm8xxx/pm8xxx-adc.h>
 #include <linux/mfd/pm8xxx/ccadc.h>
@@ -57,6 +58,8 @@ static bool flag_enable_BMS_Charger_log;
 #define ADC_ARB_SECP_DATA0	0x196
 
 #define ADC_ARB_BMS_CNTRL	0x18D
+#define AMUX_TRIM_2		0x322
+#define TEST_PROGRAM_REV	0x339
 
 enum pmic_bms_interrupts {
 	PM8921_BMS_SBI_WRITE_OK,
@@ -104,6 +107,8 @@ struct pm8921_bms_chip {
 	struct delayed_work	calib_ccadc_work;
 	unsigned int		calib_delay_ms;
 	unsigned int		revision;
+	unsigned int		xoadc_v0625_usb_present;
+	unsigned int		xoadc_v0625_usb_absent;
 	unsigned int		xoadc_v0625;
 	unsigned int		xoadc_v125;
 	unsigned int		batt_temp_channel;
@@ -123,6 +128,9 @@ struct pm8921_bms_chip {
 	uint16_t		ocv_reading_at_100;
 	int			cc_reading_at_100;
 	int			max_voltage_uv;
+	int			amux_2_trim_delta;
+	uint16_t	prev_last_good_ocv_raw;
+	int			usb_chg_plugged_ready;
 };
 
 static struct pm8921_bms_chip *the_chip;
@@ -140,6 +148,9 @@ static struct pm8921_bms_debug bms_dbg;
 #define DEFAULT_RBATT_MOHMS		128
 #define DEFAULT_OCV_MICROVOLTS		3900000
 #define DEFAULT_CHARGE_CYCLES		0
+
+static int last_usb_cal_delta_uv = 1800;
+module_param(last_usb_cal_delta_uv, int, 0644);
 
 static int last_chargecycles = DEFAULT_CHARGE_CYCLES;
 static int last_charge_increase;
@@ -330,6 +341,31 @@ static int pm_bms_masked_write(struct pm8921_bms_chip *chip, u16 addr,
 	return 0;
 }
 
+static int usb_chg_plugged_in(void)
+{
+#if 0
+	union power_supply_propval ret = {0,};
+	static struct power_supply *psy;
+	if (psy == NULL) {
+		psy = power_supply_get_by_name("usb");
+		if (psy == NULL)
+			return 0;
+	}
+
+	if (psy->get_property(psy, POWER_SUPPLY_PROP_ONLINE, &ret))
+		return 0;
+	return ret.intval;
+#endif
+	/* MATT: definition are different,
+	 * qcom return 1 if usb is in and pwrsrc is not disabled. */
+	int rc = pm8921_is_usb_chg_plugged_in();
+	if (rc < 0) {
+		return 0;
+	}
+	the_chip->usb_chg_plugged_ready = 1;
+	return rc;
+}
+
 #define HOLD_OREG_DATA		BIT(1)
 static int pm_bms_lock_output_data(struct pm8921_bms_chip *chip)
 {
@@ -432,18 +468,32 @@ static int xoadc_reading_to_microvolt(unsigned int a)
 #define XOADC_CALIB_UV		625000
 #define VBATT_MUL_FACTOR	3
 static int adjust_xo_vbatt_reading(struct pm8921_bms_chip *chip,
-							unsigned int uv)
+					int usb_chg, unsigned int uv)
 {
-	u64 numerator, denominator;
+	s64 numerator, denominator;
+	int local_delta;
 
 	if (uv == 0)
 		return 0;
 
-	numerator = ((u64)uv - chip->xoadc_v0625) * XOADC_CALIB_UV;
-	denominator =  chip->xoadc_v125 - chip->xoadc_v0625;
+	/* dont adjust if not calibrated */
+	if (chip->xoadc_v0625 == 0 || chip->xoadc_v125 == 0) {
+		pr_debug("No cal yet return %d\n", VBATT_MUL_FACTOR * uv);
+		return VBATT_MUL_FACTOR * uv;
+	}
+
+	if (usb_chg)
+		local_delta = last_usb_cal_delta_uv;
+	else
+		local_delta = 0;
+
+	pr_debug("using delta = %d\n", local_delta);
+	numerator = ((s64)uv - chip->xoadc_v0625 - local_delta)
+							* XOADC_CALIB_UV;
+	denominator =  (s64)chip->xoadc_v125 - chip->xoadc_v0625 - local_delta;
 	if (denominator == 0)
 		return uv * VBATT_MUL_FACTOR;
-	return (XOADC_CALIB_UV + div_u64(numerator, denominator))
+	return (XOADC_CALIB_UV + local_delta + div_s64(numerator, denominator))
 						* VBATT_MUL_FACTOR;
 }
 
@@ -510,13 +560,30 @@ static int read_cc(struct pm8921_bms_chip *chip, int *result)
 	return 0;
 }
 
+static int adjust_xo_vbatt_reading_for_mbg(struct pm8921_bms_chip *chip,
+						int result)
+{
+	int64_t numerator;
+	int64_t denominator;
+
+	if (chip->amux_2_trim_delta == 0)
+		return result;
+
+	numerator = (s64)result * 1000000;
+	denominator = (1000000 + (410 * (s64)chip->amux_2_trim_delta));
+	return div_s64(numerator, denominator);
+}
+
 static int convert_vbatt_raw_to_uv(struct pm8921_bms_chip *chip,
+					int usb_chg,
 					uint16_t reading, int *result)
 {
 	*result = xoadc_reading_to_microvolt(reading);
 	pr_debug("raw = %04x vbatt = %u\n", reading, *result);
-	*result = adjust_xo_vbatt_reading(chip, *result);
+	*result = adjust_xo_vbatt_reading(chip, usb_chg, *result);
 	pr_debug("after adj vbatt = %u\n", *result);
+	*result = adjust_xo_vbatt_reading_for_mbg(chip, *result);
+	pr_debug("after mbg adj vbatt = %u\n", *result);
 	return 0;
 }
 
@@ -806,9 +873,23 @@ static int interpolate_pc(struct pm8921_bms_chip *chip,
 	return 100;
 }
 
+#define MBG_TRANSIENT_ERROR_RAW 51
+static void adjust_pon_ocv_raw(struct pm8921_bms_chip *chip,
+				struct pm8921_soc_params *raw)
+{
+	/* in 8921 parts the PON ocv is taken when the MBG is not settled.
+	 * decrease the pon ocv by 15mV raw value to account for it
+	 * Since a 1/3rd  of vbatt is supplied to the adc the raw value
+	 * needs to be adjusted by 5mV worth bits
+	 */
+	if (raw->last_good_ocv_raw >= MBG_TRANSIENT_ERROR_RAW)
+		raw->last_good_ocv_raw -= MBG_TRANSIENT_ERROR_RAW;
+}
+
 static int read_soc_params_raw(struct pm8921_bms_chip *chip,
 				struct pm8921_soc_params *raw)
 {
+	int usb_chg;
 	unsigned long flags;
 
 	spin_lock_irqsave(&chip->bms_output_lock, flags);
@@ -827,17 +908,28 @@ static int read_soc_params_raw(struct pm8921_bms_chip *chip,
 	pm_bms_unlock_output_data(chip);
 	spin_unlock_irqrestore(&chip->bms_output_lock, flags);
 
-	convert_vbatt_raw_to_uv(chip,
+	usb_chg = usb_chg_plugged_in();
+	convert_vbatt_raw_to_uv(chip, usb_chg,
 			raw->vbatt_for_rbatt_raw, &raw->vbatt_for_rbatt_uv);
-	convert_vbatt_raw_to_uv(chip,
+	convert_vbatt_raw_to_uv(chip, usb_chg,
 			raw->ocv_for_rbatt_raw, &raw->ocv_for_rbatt_uv);
-	convert_vbatt_raw_to_uv(chip,
-			raw->last_good_ocv_raw, &raw->last_good_ocv_uv);
 	convert_vsense_to_uv(chip,
 			raw->vsense_for_rbatt_raw, &raw->vsense_for_rbatt_uv);
-
-	if (raw->last_good_ocv_uv)
+	if (chip->prev_last_good_ocv_raw == 0) {
+		if (chip->usb_chg_plugged_ready == 1)
+			chip->prev_last_good_ocv_raw = raw->last_good_ocv_raw;
+		adjust_pon_ocv_raw(chip, raw);
+		convert_vbatt_raw_to_uv(chip, usb_chg,
+			raw->last_good_ocv_raw, &raw->last_good_ocv_uv);
 		last_ocv_uv = raw->last_good_ocv_uv;
+	} else if (chip->prev_last_good_ocv_raw != raw->last_good_ocv_raw) {
+		chip->prev_last_good_ocv_raw = raw->last_good_ocv_raw;
+		convert_vbatt_raw_to_uv(chip, usb_chg,
+			raw->last_good_ocv_raw, &raw->last_good_ocv_uv);
+		last_ocv_uv = raw->last_good_ocv_uv;
+	} else {
+		raw->last_good_ocv_uv = last_ocv_uv;
+	}
 
 	return 0;
 }
@@ -847,9 +939,9 @@ static int calculate_rbatt(struct pm8921_bms_chip *chip,
 {
 	unsigned int  r_batt;
 
-	if (raw->ocv_for_rbatt_uv == 0
-		|| raw->ocv_for_rbatt_uv == raw->vbatt_for_rbatt_uv
-		|| raw->vsense_for_rbatt_raw == 0) {
+	if (raw->ocv_for_rbatt_uv <= 0
+		|| raw->ocv_for_rbatt_uv <= raw->vbatt_for_rbatt_uv
+		|| raw->vsense_for_rbatt_raw <= 0) {
 		pr_debug("rbatt readings unavailable ocv = %d, vbatt = %d,"
 					"vsen = %d\n",
 					raw->ocv_for_rbatt_uv,
@@ -1176,10 +1268,13 @@ static int calculate_state_of_charge(struct pm8921_bms_chip *chip,
 	return soc;
 }
 
+#define MIN_DELTA_625_UV	1000
 static void calib_hkadc(struct pm8921_bms_chip *chip)
 {
 	int voltage, rc;
 	struct pm8xxx_adc_chan_result result;
+	int usb_chg;
+	int this_delta;
 
 	rc = pm8xxx_adc_read(the_chip->ref1p25v_channel, &result);
 	if (rc) {
@@ -1199,10 +1294,30 @@ static void calib_hkadc(struct pm8921_bms_chip *chip)
 		return;
 	}
 	voltage = xoadc_reading_to_microvolt(result.adc_code);
-	pr_debug("result 0.625V = 0x%x, voltage = %duV adc_meas = %lld\n",
-				result.adc_code, voltage, result.measurement);
+
+	usb_chg = usb_chg_plugged_in();
+	pr_debug("result 0.625V = 0x%x, voltage = %duV adc_meas = %lld "
+				"usb_chg = %d\n",
+				result.adc_code, voltage, result.measurement,
+				usb_chg);
+
+	if (usb_chg)
+		chip->xoadc_v0625_usb_present = voltage;
+	else
+		chip->xoadc_v0625_usb_absent = voltage;
 
 	chip->xoadc_v0625 = voltage;
+	if (chip->xoadc_v0625_usb_present && chip->xoadc_v0625_usb_absent) {
+		this_delta = chip->xoadc_v0625_usb_present
+						- chip->xoadc_v0625_usb_absent;
+		pr_debug("this_delta= %duV\n", this_delta);
+		if (this_delta > MIN_DELTA_625_UV)
+			last_usb_cal_delta_uv = this_delta;
+		pr_debug("625V_present= %d, 625V_absent= %d, delta = %duV\n",
+			chip->xoadc_v0625_usb_present,
+			chip->xoadc_v0625_usb_absent,
+			last_usb_cal_delta_uv);
+	}
 }
 
 static void calibrate_hkadc_work(struct work_struct *work)
@@ -1719,6 +1834,7 @@ static void check_initial_ocv(struct pm8921_bms_chip *chip)
 {
 	int ocv_uv, rc;
 	int16_t ocv_raw;
+	int usb_chg;
 
 	/*
 	 * Check if a ocv is available in bms hw,
@@ -1727,7 +1843,8 @@ static void check_initial_ocv(struct pm8921_bms_chip *chip)
 	 */
 	ocv_uv = 0;
 	pm_bms_read_output_data(chip, LAST_GOOD_OCV_VALUE, &ocv_raw);
-	rc = convert_vbatt_raw_to_uv(chip, ocv_raw, &ocv_uv);
+	usb_chg = usb_chg_plugged_in();
+	rc = convert_vbatt_raw_to_uv(chip, usb_chg, ocv_raw, &ocv_uv);
 	if (rc || ocv_uv == 0) {
 		rc = adc_based_ocv(chip, &ocv_uv);
 		if (rc) {
@@ -2301,6 +2418,61 @@ static const struct dev_pm_ops pm8921_bms_pm_ops = {
 	.resume		= pm8921_bms_resume,
 };
 
+#define REG_SBI_CONFIG		0x04F
+#define PAGE3_ENABLE_MASK	0x6
+#define PROGRAM_REV_MASK	0x0F
+#define PROGRAM_REV		0x9
+static int read_ocv_trim(struct pm8921_bms_chip *chip)
+{
+	int rc;
+	u8 reg, sbi_config;
+
+	rc = pm8xxx_readb(chip->dev->parent, REG_SBI_CONFIG, &sbi_config);
+	if (rc) {
+		pr_err("error = %d reading sbi config reg\n", rc);
+		return rc;
+	}
+
+	reg = sbi_config | PAGE3_ENABLE_MASK;
+	rc = pm8xxx_writeb(chip->dev->parent, REG_SBI_CONFIG, reg);
+	if (rc) {
+		pr_err("error = %d writing sbi config reg\n", rc);
+		return rc;
+	}
+
+	rc = pm8xxx_readb(chip->dev->parent, TEST_PROGRAM_REV, &reg);
+	if (rc)
+		pr_err("Error %d reading %d addr %d\n",
+			rc, reg, TEST_PROGRAM_REV);
+	pr_err("program rev reg is 0x%x\n", reg);
+	reg &= PROGRAM_REV_MASK;
+
+	/* If the revision is equal or higher do not adjust trim delta */
+	if (reg >= PROGRAM_REV) {
+		chip->amux_2_trim_delta = 0;
+		goto restore_sbi_config;
+	}
+
+	rc = pm8xxx_readb(chip->dev->parent, AMUX_TRIM_2, &reg);
+	if (rc) {
+		pr_err("error = %d reading trim reg\n", rc);
+		return rc;
+	}
+
+	pr_err("trim reg is 0x%x\n", reg);
+	chip->amux_2_trim_delta = abs(0x49 - reg);
+	pr_err("trim delta is %d\n", chip->amux_2_trim_delta);
+
+restore_sbi_config:
+	rc = pm8xxx_writeb(chip->dev->parent, REG_SBI_CONFIG, sbi_config);
+	if (rc) {
+		pr_err("error = %d writing sbi config reg\n", rc);
+		return rc;
+	}
+
+	return 0;
+}
+
 static int __devinit pm8921_bms_probe(struct platform_device *pdev)
 {
 	int rc = 0;
@@ -2360,6 +2532,11 @@ static int __devinit pm8921_bms_probe(struct platform_device *pdev)
 	the_chip = chip;
 	create_debugfs_entries(chip);
 
+	rc = read_ocv_trim(chip);
+	if (rc) {
+		pr_err("couldn't adjust ocv_trim rc= %d\n", rc);
+		goto free_irqs;
+	}
 	check_initial_ocv(chip);
 
 	INIT_DELAYED_WORK(&chip->calib_ccadc_work, calibrate_ccadc_work);

@@ -1458,7 +1458,8 @@ static void cable_tp_status_handler_func(int connect_status)
 	printk(KERN_INFO "[TP]cable change to %d\n", connect_status);
 
 	if (connect_status != ts->status) {
-		ts->status = connect_status ? CONNECTED : NONE;
+		ts->status = connect_status > 0 ? CONNECTED : NONE;
+		printk(KERN_INFO "[TP]ts->status change to %d\n", ts->status);
 		if (!ts->status && ts->wlc_status)
 			printk(KERN_ERR "[TP]ambigurous wireless charger state\n");
 		if (ts->status && ts->wlc_status) {
@@ -1922,7 +1923,7 @@ static int atmel_224e_ts_probe(struct i2c_client *client,
 		cable_connect_type = cable_get_connect_type();
 		if (cable_connect_type == 4)
 			ts->wlc_status = CONNECTED;
-		if (cable_connect_type != 0)
+		if (cable_connect_type > 0)
 			ts->status = CONNECTED;
 #endif
 

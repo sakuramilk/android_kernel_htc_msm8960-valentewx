@@ -78,38 +78,12 @@ static int gpufreq_stats_update(unsigned int update_time_only,unsigned int last_
 		gputime_in_state[last_index] = gputime_in_state[last_index] + cur_time - gpufreq_stat.last_time;
 
 done:
-
-        gpufreq_stat.cur_index = cur_index;
-        gpufreq_stat.last_index = last_index;
+	gpufreq_stat.cur_index = cur_index;
+	gpufreq_stat.last_index = last_index;
 	gpufreq_stat.last_time = cur_time;
 
 	spin_unlock(&gpufreq_stats_lock);
 	return 0;
-}
-
-static void kgsl_pwrctrl_set_lowest_level(struct kgsl_device *device)
-{
-	struct kgsl_pwrctrl *pwr = &device->pwrctrl;
-	const int new_level = pwr->num_pwrlevels - 1;
-	if (new_level >= pwr->thermal_pwrlevel && new_level != pwr->active_pwrlevel) {
-		struct kgsl_pwrlevel *pwrlevel = &pwr->pwrlevels[new_level];
-		int prev_level = pwr->active_pwrlevel;
-		pwr->active_pwrlevel = new_level;
-		if ((test_bit(KGSL_PWRFLAGS_CLK_ON, &pwr->power_flags)) ||
-			(device->state == KGSL_STATE_NAP)) {
-			clk_set_rate(pwr->grp_clks[0], pwrlevel->gpu_freq);
-			gpufreq_stats_update(0, prev_level, new_level);
-		}
-		if (test_bit(KGSL_PWRFLAGS_AXI_ON, &pwr->power_flags)) {
-			if (pwr->pcl)
-				msm_bus_scale_client_update_request(pwr->pcl,
-					pwrlevel->bus_freq);
-			else if (pwr->ebi1_clk)
-				clk_set_rate(pwr->ebi1_clk, pwrlevel->bus_freq);
-		}
-		trace_kgsl_pwrlevel(device, pwr->active_pwrlevel,
-				    pwrlevel->gpu_freq);
-	}
 }
 
 void kgsl_pwrctrl_pwrlevel_change(struct kgsl_device *device,
@@ -162,26 +136,30 @@ static int __gpuclk_store(int max, struct device *dev,
 	mutex_lock(&device->mutex);
 	for (i = 0; i < pwr->num_pwrlevels; i++) {
 		if (abs(pwr->pwrlevels[i].gpu_freq - val) < delta) {
-			if (max)
-				pwr->thermal_pwrlevel = i;
+			if (max) {
+				if (i == 0 || i < (pwr->num_pwrlevels - 1))
+					pwr->thermal_pwrlevel = i;
+				else
+					pwr->thermal_pwrlevel = i - 1;
+			}
 			break;
 		}
 	}
 
-	if (i == pwr->num_pwrlevels)
+	if (i == pwr->num_pwrlevels) {
+		pr_warning("[KGSL] unknown gpu clk freq: %ld\n", val);
 		goto done;
+	}
 
 	/*
 	 * If the current or requested clock speed is greater than the
 	 * thermal limit, bump down immediately.
 	 */
+	pr_info("[KGSL] %s val: %ld, thermal: %d\n", __func__, val, pwr->thermal_pwrlevel);
 
 	if (pwr->pwrlevels[pwr->active_pwrlevel].gpu_freq >
 	    pwr->pwrlevels[pwr->thermal_pwrlevel].gpu_freq)
-		if (max && pwr->thermal_pwrlevel == pwr->thermal_pwrlevel) {
-			kgsl_pwrctrl_set_lowest_level(device);
-		} else
-			kgsl_pwrctrl_pwrlevel_change(device, pwr->thermal_pwrlevel);
+		kgsl_pwrctrl_pwrlevel_change(device, pwr->thermal_pwrlevel);
 	else if (!max)
 		kgsl_pwrctrl_pwrlevel_change(device, i);
 
