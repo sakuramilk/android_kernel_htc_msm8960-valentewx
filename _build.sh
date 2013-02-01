@@ -17,10 +17,10 @@ cpoy_initramfs()
 
 # device setting
 AOSP_DEFCONFIG=kbc_isw13ht_aosp_defconfig
-SAM_DEFCONFIG=kbc_isw13ht_samsung_defconfig
+HTC_DEFCONFIG=kbc_isw13ht_htc_defconfig
 RECO_DEFCONFIG=kbc_isw13ht_recovery_defconfig
 MULTI_DEFCONFIG=kbc_isw13ht_multi_defconfig
-MOD_VERSION=isw13ht_mod_version
+MOD_VERSION=mod_version
 BOOT_RAMDISK_NAME=isw13ht_boot_ramdisk
 RECOVERY_RAMDISK_NAME=isw13ht_recovery_ramdisk
 KERNEL_BASE_ADDRESS=0x48000000
