@@ -989,7 +989,7 @@ unsigned mmc_sd_get_max_clock(struct mmc_card *card)
 	} else if (max_dtr > card->csd.max_dtr) {
 		max_dtr = card->csd.max_dtr;
 	}
-	printk("kenny max clk %u\n", max_dtr);
+
 	return max_dtr;
 }
 
@@ -1017,7 +1017,6 @@ static int mmc_sd_init_card(struct mmc_host *host, u32 ocr,
 	WARN_ON(!host->claimed);
 
 	err = mmc_sd_get_cid(host, ocr, cid, &rocr);
-
 	if (err)
 		return err;
 

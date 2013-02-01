@@ -99,6 +99,7 @@ static int pm8xxx_vib_set_on(struct pm8xxx_vib *vib)
 		VIB_INFO_LOG("%s vibrator is disable by switch\n",__func__);
 		return 0;
 	}
+
 	rc = pm8xxx_vib_write_u8(vib, val1, VIB_DRV);
 	if (rc < 0){
 		VIB_ERR_LOG("%s writing pmic fail, ret:%X\n", __func__, rc);
@@ -309,10 +310,11 @@ static int __devinit pm8xxx_vib_probe(struct platform_device *pdev)
 	if (rc < 0) {
 		VIB_ERR_LOG("%s, create sysfs fail: voltage_level\n", __func__);
 	}
-	rc = device_create_file(vib->timed_dev.dev, &dev_attr_function_switch);
-	if (rc < 0) {
-		VIB_ERR_LOG("%s, create sysfs fail: function_switch\n", __func__);
-	}
+
+        rc = device_create_file(vib->timed_dev.dev, &dev_attr_function_switch);
+        if (rc < 0) {
+                VIB_ERR_LOG("%s, create sysfs fail: function_switch\n", __func__);
+        }
 
 	platform_set_drvdata(pdev, vib);
 
