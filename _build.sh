@@ -12,7 +12,7 @@ cpoy_initramfs()
   fi
   cp -a $INITRAMFS_SRC_DIR $(dirname $INITRAMFS_TMP_DIR)
   rm -rf $INITRAMFS_TMP_DIR/.git
-  find $INITRAMFS_TMP_DIR -name .gitignore | xargs rm
+  find $INITRAMFS_TMP_DIR -name .gitkeep | xargs rm
 }
 
 # device setting
@@ -23,8 +23,8 @@ MULTI_DEFCONFIG=kbc_isw13ht_multi_defconfig
 MOD_VERSION=mod_version
 BOOT_RAMDISK_NAME=isw13ht_boot_ramdisk
 RECOVERY_RAMDISK_NAME=isw13ht_recovery_ramdisk
-KERNEL_BASE_ADDRESS=0x48000000
-KERNEL_RAMDISK_ADDRESS=0x49400000
+KERNEL_BASE_ADDRESS=0x80400000
+KERNEL_RAMDISK_ADDRESS=0x81800000
 
 if [ ! -n "$BUILD_TARGET" ]; then
   echo "error: not found BUILD_TARGET"
@@ -125,7 +125,7 @@ echo "----- Making uncompressed $IMAGE_NAME ramdisk ------"
 echo "----- Making $IMAGE_NAME ramdisk ------"
 ./release-tools/minigzip < $BIN_DIR/ramdisk-$IMAGE_NAME.cpio > $BIN_DIR/ramdisk-$IMAGE_NAME.img
 echo "----- Making $IMAGE_NAME image ------"
-./release-tools/mkbootimg --cmdline "androidboot.hardware=qcom usb_id_pin_rework=true zcache" --kernel $BIN_DIR/kernel  --ramdisk $BIN_DIR/ramdisk-$IMAGE_NAME.img --base $KERNEL_BASE_ADDRESS --pagesize 2048 --ramdiskaddr $KERNEL_RAMDISK_ADDRESS --output $BIN_DIR/$IMAGE_NAME.img
+./release-tools/mkbootimg --cmdline "console=ttyHSL0,115200,n8" --kernel $BIN_DIR/kernel  --ramdisk $BIN_DIR/ramdisk-$IMAGE_NAME.img --base $KERNEL_BASE_ADDRESS --ramdiskaddr $KERNEL_RAMDISK_ADDRESS --output $BIN_DIR/$IMAGE_NAME.img
 
 # create odin image
 cd $BIN_DIR
