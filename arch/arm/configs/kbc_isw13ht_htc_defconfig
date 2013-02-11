@@ -1,6 +1,6 @@
 #
 # Automatically generated make config: don't edit
-# Linux/arm 3.0.12 Kernel Configuration
+# Linux/arm 3.0.62 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -512,6 +512,8 @@ CONFIG_MULTI_IRQ_HANDLER=y
 # CONFIG_ARM_ERRATA_751472 is not set
 # CONFIG_ARM_ERRATA_754322 is not set
 # CONFIG_ARM_ERRATA_754327 is not set
+# CONFIG_ARM_ERRATA_764369 is not set
+# CONFIG_ARM_ERRATA_775420 is not set
 # CONFIG_KSAPI is not set
 CONFIG_ARM_GIC=y
 # CONFIG_FIQ_DEBUGGER is not set
@@ -522,7 +524,6 @@ CONFIG_ARM_GIC=y
 # CONFIG_PCI_SYSCALL is not set
 # CONFIG_ARCH_SUPPORTS_MSI is not set
 # CONFIG_PCCARD is not set
-# CONFIG_ARM_ERRATA_764369 is not set
 
 #
 # Kernel Features
@@ -2524,7 +2525,6 @@ CONFIG_USB_STORAGE_ONETOUCH=y
 CONFIG_USB_STORAGE_KARMA=y
 CONFIG_USB_STORAGE_CYPRESS_ATACB=y
 # CONFIG_USB_STORAGE_ENE_UB6250 is not set
-# CONFIG_USB_UAS is not set
 # CONFIG_USB_LIBUSUAL is not set
 
 #
