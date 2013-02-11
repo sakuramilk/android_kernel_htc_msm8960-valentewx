@@ -2422,10 +2422,19 @@ static struct module *setup_load_info(struct load_info *info)
 
 static int check_modinfo(struct module *mod, struct load_info *info)
 {
+#ifndef CONFIG_MODULE_FORCE_LOAD
 	const char *modmagic = get_modinfo(info, "vermagic");
+#endif
 	int err;
 
 	/* This is allowed: modprobe --force will invalidate it. */
+#ifdef CONFIG_MODULE_FORCE_LOAD
+	err = try_to_force_load(mod, "bad vermagic");
+	if (err) {
+		printk(KERN_ERR "%s: try_to_force_load failed\n", mod->name);
+		return err;
+	}
+#else
 	if (!modmagic) {
 		err = try_to_force_load(mod, "bad vermagic");
 		if (err)
@@ -2435,6 +2444,7 @@ static int check_modinfo(struct module *mod, struct load_info *info)
 		       mod->name, modmagic, vermagic);
 		return -ENOEXEC;
 	}
+#endif
 
 	if (get_modinfo(info, "staging")) {
 		add_taint_module(mod, TAINT_CRAP);
