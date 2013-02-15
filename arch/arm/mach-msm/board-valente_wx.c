@@ -113,6 +113,10 @@
 #include "pm-boot.h"
 #include <linux/htc_irda.h>
 
+#ifdef CONFIG_FB_MSM_HDMI_MHL
+#include <mach/mhl.h>
+#endif
+
 #include <linux/htc_flashlight.h>
 #include <mach/board_htc.h>
 #include <mach/htc_util.h>
@@ -355,18 +359,37 @@ static struct i2c_board_info nmi625_i2c_info[] = {
 #define MSM_PMEM_ADSP_SIZE         0x6D00000
 #define MSM_PMEM_ADSP2_SIZE        0x700000
 #define MSM_PMEM_AUDIO_SIZE        0x2B4000
-#define MSM_PMEM_SIZE 0x4000000 /* 64 Mbytes */
+#ifdef CONFIG_MSM_IOMMU
+#define MSM_PMEM_SIZE 0x00000000 /* 0 Mbytes */
+#else
+#define MSM_PMEM_SIZE 0x04000000 /* 64 Mbytes */
+#endif
 #define MSM_LIQUID_PMEM_SIZE 0x4000000 /* 64 Mbytes */
 
 #ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
 #define MSM_PMEM_KERNEL_EBI1_SIZE  0x280000
 #define MSM_ION_SF_SIZE		MSM_PMEM_SIZE
 #define MSM_ION_MM_FW_SIZE	0x200000 /* (2MB) */
+#ifdef CONFIG_MSM_IOMMU
+/* QHD PREVIEW x 9
+ * QHD THUMBNAIL x 5
+ * 8M 16:9 SNAPSHOT x 5
+ * 8M 16:9 JPEG x 1
+ * 3A, 4K x 15 + 8K x 3
+ * ALIGH INTERGER + 1MB
+ */
+#define MSM_ION_MM_SIZE		0x3F00000
+#else
 #define MSM_ION_MM_SIZE		MSM_PMEM_ADSP_SIZE - MSM_PMEM_ADSP2_SIZE
-#define MSM_ION_ROTATOR_SIZE	MSM_PMEM_ADSP2_SIZE
+#endif
 #define MSM_ION_QSECOM_SIZE	0x100000 /* (1MB) */
 #define MSM_ION_MFC_SIZE	0x100000  //SZ_8K
-#define MSM_ION_HEAP_NUM	8
+
+#ifdef CONFIG_MSM_IOMMU
+#define MSM_ION_HEAP_NUM	6
+#else
+#define MSM_ION_HEAP_NUM	7
+#endif
 #define MSM_LIQUID_ION_MM_SIZE (MSM_ION_MM_SIZE + 0x600000)
 #else
 #define MSM_PMEM_KERNEL_EBI1_SIZE  0x110C000
@@ -590,14 +613,6 @@ static struct ion_platform_data ion_pdata = {
 			.extra_data = (void *) &cp_mm_ion_pdata,
 		},
 		{
-			.id	= ION_CP_ROTATOR_HEAP_ID,
-			.type	= ION_HEAP_TYPE_CP,
-			.name	= ION_ROTATOR_HEAP_NAME,
-			.size	= MSM_ION_ROTATOR_SIZE,
-			.memory_type = ION_EBI_TYPE,
-			.extra_data = (void *) &cp_mm_ion_pdata,
-		},
-		{
 			.id	= ION_MM_FIRMWARE_HEAP_ID,
 			.type	= ION_HEAP_TYPE_CARVEOUT,
 			.name	= ION_MM_FIRMWARE_HEAP_NAME,
@@ -613,6 +628,7 @@ static struct ion_platform_data ion_pdata = {
 			.memory_type = ION_EBI_TYPE,
 			.extra_data = (void *) &cp_mfc_ion_pdata,
 		},
+#ifndef CONFIG_MSM_IOMMU
 		{
 			.id	= ION_SF_HEAP_ID,
 			.type	= ION_HEAP_TYPE_CARVEOUT,
@@ -621,6 +637,7 @@ static struct ion_platform_data ion_pdata = {
 			.memory_type = ION_EBI_TYPE,
 			.extra_data = (void *) &co_ion_pdata,
 		},
+#endif
 		{
 			.id	= ION_IOMMU_HEAP_ID,
 			.type	= ION_HEAP_TYPE_IOMMU,
