@@ -38,8 +38,6 @@
  * config option
  ******************************************************************************/
 
-#define FELICA_CONFIG_ACCESS_RESTRICTION
-
 struct felica_platform_data {
 	unsigned int pon_gpio;
 	unsigned int cen_dtyp_d;
