@@ -6,8 +6,8 @@ KERNEL_DIR=$PWD
 
 MOD_VERSION=mod_version
 RECOVERY_RAMDISK_NAME=isw13ht_recovery_ramdisk
-KERNEL_BASE_ADDRESS=0x48000000
-KERNEL_RAMDISK_ADDRESS=0x49400000
+KERNEL_BASE_ADDRESS=0x80400000
+KERNEL_RAMDISK_ADDRESS=0x81800000
 
 
 BIN_DIR=out/PREBUILD/bin
@@ -44,11 +44,11 @@ echo "----- Making $IMAGE_NAME image ------"
 ./release-tools/mkbootimg --cmdline "androidboot.hardware=qcom usb_id_pin_rework=true" --kernel $BIN_DIR/kernel  --ramdisk $BIN_DIR/ramdisk-$IMAGE_NAME.img --base $KERNEL_BASE_ADDRESS --pagesize 2048 --ramdiskaddr $KERNEL_RAMDISK_ADDRESS --output $BIN_DIR/$IMAGE_NAME.img
 
 # create odin image
-cd $BIN_DIR
-tar cf $BUILD_LOCALVERSION-$IMAGE_NAME-odin.tar $IMAGE_NAME.img
-md5sum -t $BUILD_LOCALVERSION-$IMAGE_NAME-odin.tar >> $BUILD_LOCALVERSION-$IMAGE_NAME-odin.tar
-mv $BUILD_LOCALVERSION-$IMAGE_NAME-odin.tar $BUILD_LOCALVERSION-$IMAGE_NAME-odin.tar.md5
-echo "  $BIN_DIR/$BUILD_LOCALVERSION-$IMAGE_NAME-odin.tar.md5"
+#cd $BIN_DIR
+#tar cf $BUILD_LOCALVERSION-$IMAGE_NAME-odin.tar $IMAGE_NAME.img
+#md5sum -t $BUILD_LOCALVERSION-$IMAGE_NAME-odin.tar >> $BUILD_LOCALVERSION-$IMAGE_NAME-odin.tar
+#mv $BUILD_LOCALVERSION-$IMAGE_NAME-odin.tar $BUILD_LOCALVERSION-$IMAGE_NAME-odin.tar.md5
+#echo "  $BIN_DIR/$BUILD_LOCALVERSION-$IMAGE_NAME-odin.tar.md5"
 
 # create cwm image
 if [ -d tmp ]; then
