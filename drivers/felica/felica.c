@@ -169,12 +169,12 @@ void felica_uart_exit(void)
  */
 int felica_uart_open(struct inode *inode, struct file *file)
 {
-#ifdef FELICA_CONFIG_ACCESS_RESTRICTION
+#ifdef CONFIG_FELICA_ACCESS_RESTRICTION
 	uid_t uid;
 #endif
 	FELICA_LOG_DEBUG("[FELICA_DD] %s START", __func__);
 
-#ifdef FELICA_CONFIG_ACCESS_RESTRICTION
+#ifdef CONFIG_FELICA_ACCESS_RESTRICTION
 	uid = __task_cred(current)->uid;
 	if( (uid != gmfc_uid) && (uid != gdtl_uid) &&
         (uid != gdiag_uid)  )
@@ -637,12 +637,12 @@ void felica_pon_exit(void)
  */
 int felica_pon_open(struct inode *inode, struct file *file)
 {
-#ifdef FELICA_CONFIG_ACCESS_RESTRICTION
+#ifdef CONFIG_FELICA_ACCESS_RESTRICTION
 	uid_t uid;
 #endif
 	FELICA_LOG_DEBUG("[FELICA_DD] %s START", __func__);
 
-#ifdef FELICA_CONFIG_ACCESS_RESTRICTION
+#ifdef CONFIG_FELICA_ACCESS_RESTRICTION
 	uid = __task_cred(current)->uid;
 	if( (uid != gmfc_uid) && (uid != gdtl_uid) &&
         (uid != gdiag_uid)  )
@@ -840,13 +840,13 @@ void felica_cen_exit(void)
  */
 int felica_cen_open(struct inode *inode, struct file *file)
 {
-#ifdef FELICA_CONFIG_ACCESS_RESTRICTION
+#ifdef CONFIG_FELICA_ACCESS_RESTRICTION
 	uid_t uid;
 #endif
 	int ret = 0;
 	FELICA_LOG_DEBUG("[FELICA_DD] %s START", __func__);
 
-#ifdef FELICA_CONFIG_ACCESS_RESTRICTION
+#ifdef CONFIG_FELICA_ACCESS_RESTRICTION
 	uid = __task_cred(current)->uid;
 	FELICA_LOG_INFO("[FELICA_DD] %s uid:%d, gmfl_uid:%d, gdiag_uid:%d, gmfc_uid:%d, gdtl_uid:%d, mfg_mode:%d\n",
 		__func__, uid, gmfl_uid, gdiag_uid, gmfc_uid, gdtl_uid, board_mfg_mode());
@@ -1148,12 +1148,12 @@ void felica_rfs_exit(void)
  */
 int felica_rfs_open(struct inode *inode, struct file *file)
 {
-#ifdef FELICA_CONFIG_ACCESS_RESTRICTION
+#ifdef CONFIG_FELICA_ACCESS_RESTRICTION
 	uid_t uid;
 #endif
 	FELICA_LOG_DEBUG("[FELICA_DD] %s START", __func__);
 
-#ifdef FELICA_CONFIG_ACCESS_RESTRICTION
+#ifdef CONFIG_FELICA_ACCESS_RESTRICTION
 	uid = __task_cred(current)->uid;
 
 	if( (uid != gmfc_uid) && (uid != gdtl_uid) &&
@@ -1302,12 +1302,12 @@ void felica_rws_exit(void)
  */
 int felica_rws_open(struct inode *inode, struct file *file)
 {
-#ifdef FELICA_CONFIG_ACCESS_RESTRICTION
+#ifdef CONFIG_FELICA_ACCESS_RESTRICTION
 	uid_t uid;
 #endif
 	FELICA_LOG_DEBUG("[FELICA_DD] %s START", __func__);
 
-#ifdef FELICA_CONFIG_ACCESS_RESTRICTION
+#ifdef CONFIG_FELICA_ACCESS_RESTRICTION
 	uid = __task_cred(current)->uid;
 	if( file->f_mode & FMODE_WRITE )
 	{
@@ -1499,12 +1499,12 @@ void felica_int_exit(void)
  */
 int felica_int_open(struct inode *inode, struct file *file)
 {
-#ifdef FELICA_CONFIG_ACCESS_RESTRICTION
+#ifdef CONFIG_FELICA_ACCESS_RESTRICTION
 	uid_t uid;
 #endif
 	FELICA_LOG_DEBUG("[FELICA_DD] %s START", __func__);
 
-#ifdef FELICA_CONFIG_ACCESS_RESTRICTION
+#ifdef CONFIG_FELICA_ACCESS_RESTRICTION
 	uid = __task_cred(current)->uid;
 	if( uid != gdiag_uid) 
 	{
@@ -1900,12 +1900,14 @@ int felica_uid_open(struct inode *inode, struct file *file)
 	memcpy( cmdline,cmdpos ,leng );	
 	cmdline[leng] = '\0';
 
+#ifdef CONFIG_FELICA_NAME_CHECK
 	if( ( strncmp(cmdline,gdiag_name,leng) != 0 ) &&
    	    ( strncmp(cmdline,PROCESS_NAME_FELICA_DAEMON,leng) != 0 ) )
 	{
 		FELICA_LOG_ERR("[FELICA_DD] %s ERROR, %s", __func__, cmdline);
 		return -EACCES;
 	}
+#endif
 	FELICA_LOG_DEBUG("[FELICA_DD] %s END", __func__);
 	return 0;
 }

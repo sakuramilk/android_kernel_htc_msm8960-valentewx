@@ -3,3 +3,16 @@ config FELICA_DD
 	help
 	  Say Y here if you want to support felica feature...
 
+config FELICA_ACCESS_RESTRICTION
+	bool "FELICA access restriction"
+	depends on FELICA_DD
+	default y
+	help
+	  Say Y here if you want to support felica access restriction.
+
+config FELICA_NAME_CHECK
+	bool "FELICA DD name check"
+	depends on FELICA_DD
+	default y
+	help
+	  Say Y here if you want to support felica dd name check.
