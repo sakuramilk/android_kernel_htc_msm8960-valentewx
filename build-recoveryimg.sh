@@ -11,8 +11,6 @@ KERNEL_RAMDISK_ADDRESS=0x81800000
 
 
 BIN_DIR=out/PREBUILD/bin
-OBJ_DIR=out/PREBUILD/obj
-
 if [ ! -d $BIN_DIR ]; then
   mkdir -p $BIN_DIR  
 fi
@@ -32,7 +30,7 @@ if [ -d $INITRAMFS_TMP_DIR ]; then
 fi
 cp -a $INITRAMFS_SRC_DIR $(dirname $INITRAMFS_TMP_DIR)
 rm -rf $INITRAMFS_TMP_DIR/.git
-find $INITRAMFS_TMP_DIR -name .gitignore | xargs rm
+find $INITRAMFS_TMP_DIR -name .gitkeep | xargs rm
 
 # copy zImage
 cp ./release-tools/prebuild/kernel $BIN_DIR/kernel
@@ -43,8 +41,9 @@ echo "----- Making $IMAGE_NAME ramdisk ------"
 echo "----- Making $IMAGE_NAME image ------"
 ./release-tools/mkbootimg --cmdline "androidboot.hardware=qcom usb_id_pin_rework=true" --kernel $BIN_DIR/kernel  --ramdisk $BIN_DIR/ramdisk-$IMAGE_NAME.img --base $KERNEL_BASE_ADDRESS --pagesize 2048 --ramdiskaddr $KERNEL_RAMDISK_ADDRESS --output $BIN_DIR/$IMAGE_NAME.img
 
+cd $BIN_DIR
+
 # create odin image
-#cd $BIN_DIR
 #tar cf $BUILD_LOCALVERSION-$IMAGE_NAME-odin.tar $IMAGE_NAME.img
 #md5sum -t $BUILD_LOCALVERSION-$IMAGE_NAME-odin.tar >> $BUILD_LOCALVERSION-$IMAGE_NAME-odin.tar
 #mv $BUILD_LOCALVERSION-$IMAGE_NAME-odin.tar $BUILD_LOCALVERSION-$IMAGE_NAME-odin.tar.md5
